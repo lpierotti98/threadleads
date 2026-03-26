@@ -5,7 +5,11 @@ import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const sig = request.headers.get('stripe-signature')!;
+  const sig = request.headers.get('stripe-signature');
+
+  if (!sig) {
+    return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
+  }
 
   let event: Stripe.Event;
 
@@ -31,19 +35,22 @@ export async function POST(request: NextRequest) {
       const userId = session.metadata?.user_id;
       const plan = session.metadata?.plan;
 
-      if (userId && plan) {
-        const { error } = await supabase.from('subscriptions').upsert(
-          {
-            user_id: userId,
-            plan,
-            status: 'active',
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
-          },
-          { onConflict: 'user_id' }
-        );
-        if (error) console.error('[stripe:webhook] Supabase upsert error:', error);
+      if (!userId || !plan || !['starter', 'pro'].includes(plan)) {
+        console.error('[stripe:webhook] Invalid metadata:', { userId, plan });
+        break;
       }
+
+      const { error } = await supabase.from('subscriptions').upsert(
+        {
+          user_id: userId,
+          plan,
+          status: 'active',
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: session.subscription as string,
+        },
+        { onConflict: 'user_id' }
+      );
+      if (error) console.error('[stripe:webhook] Supabase upsert error:', error);
       break;
     }
 

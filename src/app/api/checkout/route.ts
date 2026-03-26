@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getStripe } from '@/lib/stripe';
 
+const VALID_PLANS = ['starter', 'pro'] as const;
+const PRICES: Record<string, number> = { starter: 19900, pro: 39900 };
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -13,17 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { plan } = await request.json();
+    const body = await request.json();
+    const plan = body.plan;
 
-    const prices: Record<string, number> = {
-      starter: 19900,
-      pro: 39900,
-    };
-
-    const priceAmount = prices[plan];
-    if (!priceAmount) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    if (!plan || !VALID_PLANS.includes(plan)) {
+      return NextResponse.json({ error: 'Invalid plan. Must be "starter" or "pro".' }, { status: 400 });
     }
+
+    const priceAmount = PRICES[plan];
 
     const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
               name: `ThreadLeads ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
               description:
                 plan === 'starter'
-                  ? '500 scans/day, 50 replies/month'
-                  : 'Unlimited scans and replies',
+                  ? '50 scans/day, 50 replies/month'
+                  : '500 scans/day, 500 replies/month',
             },
             unit_amount: priceAmount,
             recurring: { interval: 'month' },

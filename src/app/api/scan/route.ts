@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { scoreThread } from '@/lib/claude';
+import {
+  authenticateAndAuthorize,
+  checkScanLimit,
+  checkRateLimit,
+  truncateForClaude,
+} from '@/lib/auth-guard';
 
 function redditTimeFilter(days: number): string {
   if (days <= 1) return 'day';
@@ -9,19 +15,31 @@ function redditTimeFilter(days: number): string {
   return 'year';
 }
 
+const ALLOWED_DAYS = [1, 7, 30, 90];
+const MIN_SCORE = 40;
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const days = typeof body.days === 'number' && body.days > 0 ? body.days : 7;
+    // 1. Auth + subscription check
+    const authResult = await authenticateAndAuthorize();
+    if (!authResult.ok) return authResult.response;
+    const { auth } = authResult;
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 2. Check scan limits BEFORE any API calls
+    const scanLimit = checkScanLimit(auth);
+    if (!scanLimit.allowed) {
+      return NextResponse.json({ error: scanLimit.reason }, { status: 429 });
     }
+
+    // 3. Rate limit
+    const rateLimit = checkRateLimit(auth.userId);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: rateLimit.reason }, { status: 429 });
+    }
+
+    // 4. Validate input
+    const body = await request.json().catch(() => ({}));
+    const days = ALLOWED_DAYS.includes(body.days) ? body.days : 7;
 
     const serviceClient = createServiceClient();
 
@@ -29,7 +47,7 @@ export async function POST(request: NextRequest) {
     const { data: settings } = await serviceClient
       .from('users_settings')
       .select('keywords')
-      .eq('user_id', user.id)
+      .eq('user_id', auth.userId)
       .maybeSingle();
 
     const keywords = (settings?.keywords || []).filter(
@@ -37,20 +55,22 @@ export async function POST(request: NextRequest) {
     );
 
     if (keywords.length === 0) {
-      return NextResponse.json({ error: 'No active keywords' }, { status: 400 });
+      return NextResponse.json({ error: 'No active keywords.' }, { status: 400 });
     }
 
-    console.log(`[scan] Starting scan for ${keywords.length} keyword(s): ${keywords.map((k: { text: string }) => k.text).join(', ')}`);
+    // Cap keywords to prevent abuse
+    const activeKeywords = keywords.slice(0, 10);
 
-    const MIN_SCORE = 20; // TODO: restore to 40+ after testing
+    console.log(`[scan] Starting scan for ${activeKeywords.length} keyword(s): ${activeKeywords.map((k: { text: string }) => k.text).join(', ')}`);
+
     let totalSaved = 0;
     let redditFound = 0;
     let hnFound = 0;
 
-    for (const kw of keywords) {
-      const query = encodeURIComponent(kw.text);
+    for (const kw of activeKeywords) {
+      const query = encodeURIComponent(kw.text.substring(0, 100));
 
-      // Search Reddit via public RSS feed
+      // Search Reddit via RSS
       try {
         const redditUrl = `https://www.reddit.com/search.rss?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`;
         const redditRes = await fetch(redditUrl, {
@@ -63,7 +83,6 @@ export async function POST(request: NextRequest) {
         console.log(`[scan:reddit] URL: ${redditUrl}`);
         console.log(`[scan:reddit] Status: ${redditRes.status}`);
 
-        // Rate limit: wait 1s between Reddit requests
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         if (redditRes.status !== 200) {
@@ -71,8 +90,6 @@ export async function POST(request: NextRequest) {
           console.log(`[scan:reddit] Error response:`, errText.substring(0, 200));
         } else {
           const rssText = await redditRes.text();
-
-          // Parse RSS XML entries
           const entries = Array.from(rssText.matchAll(/<entry>([\s\S]*?)<\/entry>/g));
           const posts = entries.map(match => {
             const entry = match[1];
@@ -86,39 +103,35 @@ export async function POST(request: NextRequest) {
           redditFound += posts.length;
           console.log(`[scan:reddit] Found ${posts.length} posts for "${kw.text}"`);
 
-          // Log first 3 titles to confirm real data
-          const preview = posts.slice(0, 3).map(p => p.title);
-          console.log(`[scan:reddit] First ${preview.length} titles:`, preview);
-
           for (const post of posts) {
-            // Check for duplicate
             const { data: existing } = await serviceClient
               .from('threads')
               .select('id')
               .eq('url', post.url)
-              .eq('user_id', user.id)
+              .eq('user_id', auth.userId)
               .maybeSingle();
 
             if (existing) continue;
 
-            // Score with Claude
             try {
-              const result = await scoreThread(post.title, post.content);
+              const result = await scoreThread(
+                truncateForClaude(post.title, 200),
+                truncateForClaude(post.content)
+              );
 
-              console.log(`[scan:reddit:raw] "${post.title}" — raw Claude response:`, result._raw);
-              console.log(`[scan:reddit] "${post.title}" — score: ${result.score}, urgency: ${result.urgency}`);
+              console.log(`[scan:reddit] "${post.title.substring(0, 60)}" — score: ${result.score}`);
 
               if (result.score >= MIN_SCORE) {
                 await serviceClient.from('threads').insert({
-                  user_id: user.id,
+                  user_id: auth.userId,
                   source: 'reddit',
-                  title: post.title,
-                  url: post.url,
+                  title: post.title.substring(0, 500),
+                  url: post.url.substring(0, 2000),
                   content_preview: post.content.substring(0, 300),
-                  subreddit: post.subreddit,
+                  subreddit: post.subreddit.substring(0, 100),
                   score: result.score,
                   urgency: result.urgency,
-                  score_reason: result.reason,
+                  score_reason: result.reason?.substring(0, 500) || '',
                   reply_generated: false,
                   marked_done: false,
                   marked_contacted: false,
@@ -126,8 +139,7 @@ export async function POST(request: NextRequest) {
                 totalSaved++;
               }
             } catch (err) {
-              console.error(`[scan:reddit:error] Failed to score "${post.title}":`, err);
-              // Skip this thread and continue
+              console.error(`[scan:reddit:error] Failed to score "${post.title.substring(0, 60)}":`, err);
             }
           }
         }
@@ -143,11 +155,11 @@ export async function POST(request: NextRequest) {
 
         console.log(`[scan:hn] URL: ${hnUrl}`);
         console.log(`[scan:hn] Status: ${hnRes.status}`);
-        if (hnRes.status !== 200) {
-          console.log(`[scan:hn] Error response:`, await hnRes.text());
-        }
 
-        if (hnRes.ok) {
+        if (hnRes.status !== 200) {
+          const errText = await hnRes.text();
+          console.log(`[scan:hn] Error response:`, errText.substring(0, 200));
+        } else {
           const hnData = await hnRes.json();
           const hits = hnData?.hits || [];
           hnFound += hits.length;
@@ -159,30 +171,28 @@ export async function POST(request: NextRequest) {
               .from('threads')
               .select('id')
               .eq('url', url)
-              .eq('user_id', user.id)
+              .eq('user_id', auth.userId)
               .maybeSingle();
 
             if (existing) continue;
 
             try {
               const result = await scoreThread(
-                hit.title || '',
-                hit.story_text?.substring(0, 500) || ''
+                truncateForClaude(hit.title || '', 200),
+                truncateForClaude(hit.story_text || '')
               );
-
-              console.log(`[scan:hn:raw] "${hit.title}" — raw Claude response:`, result._raw);
 
               if (result.score >= MIN_SCORE) {
                 await serviceClient.from('threads').insert({
-                  user_id: user.id,
+                  user_id: auth.userId,
                   source: 'hn',
-                  title: hit.title || 'Untitled',
+                  title: (hit.title || 'Untitled').substring(0, 500),
                   url,
                   content_preview: (hit.story_text || '').substring(0, 300),
                   subreddit: null,
                   score: result.score,
                   urgency: result.urgency,
-                  score_reason: result.reason,
+                  score_reason: result.reason?.substring(0, 500) || '',
                   reply_generated: false,
                   marked_done: false,
                   marked_contacted: false,
@@ -191,7 +201,6 @@ export async function POST(request: NextRequest) {
               }
             } catch (err) {
               console.error(`[scan:hn:error] Failed to score "${hit.title}":`, err);
-              // Skip this thread and continue
             }
           }
         }
@@ -200,32 +209,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(
-      `[scan] Found ${redditFound} Reddit threads, ${hnFound} HN threads. ${totalSaved} passed score threshold (>= ${MIN_SCORE}).`
-    );
+    console.log(`[scan] Found ${redditFound} Reddit, ${hnFound} HN. ${totalSaved} saved (>= ${MIN_SCORE}).`);
 
-    // Update usage
+    // Update usage AFTER successful scan
     const today = new Date().toISOString().split('T')[0];
     const { data: usageRow } = await serviceClient
       .from('usage')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', auth.userId)
       .maybeSingle();
 
     if (usageRow) {
       const lastScanDate = usageRow.last_scan_at
         ? new Date(usageRow.last_scan_at).toISOString().split('T')[0]
         : null;
-      const scansToday =
-        lastScanDate === today ? usageRow.scans_today + 1 : 1;
+      const scansToday = lastScanDate === today ? usageRow.scans_today + 1 : 1;
 
       await serviceClient
         .from('usage')
         .update({ scans_today: scansToday, last_scan_at: new Date().toISOString() })
-        .eq('user_id', user.id);
+        .eq('user_id', auth.userId);
     } else {
       await serviceClient.from('usage').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         scans_today: 1,
         replies_this_month: 0,
         last_scan_at: new Date().toISOString(),
@@ -235,9 +241,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ saved: totalSaved });
   } catch (error) {
     console.error('Scan error:', error);
-    return NextResponse.json(
-      { error: 'Scan failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Scan failed' }, { status: 500 });
   }
 }
