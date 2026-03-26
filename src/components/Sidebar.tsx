@@ -8,6 +8,7 @@ import {
   CreditCard,
   Settings,
   Code2,
+  LifeBuoy,
   LogOut,
   Menu,
   X,
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/pricing', label: 'Pricing', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/api-docs', label: 'API Docs', icon: Code2 },
+  { href: '/support', label: 'Support', icon: LifeBuoy },
 ];
 
 export default function Sidebar() {

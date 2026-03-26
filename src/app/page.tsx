@@ -416,8 +416,24 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══ CTA BANNER ═══ */}
+        {/* ═══ SUPPORT ═══ */}
         <section style={{ padding: '80px 24px', background: TEXT }}>
+          <div style={{ maxWidth: 500, margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: ACCENT, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Support</p>
+            <h2 className="font-display" style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: '#fff' }}>
+              Need help?
+            </h2>
+            <p style={{ fontSize: 15, color: '#94a3b8', marginTop: 8, lineHeight: 1.7 }}>
+              Our team responds within 24 hours. Every message is read personally.
+            </p>
+            <Link href="/support" className="btn-scale" style={{ display: 'inline-block', marginTop: 24, fontSize: 14, fontWeight: 600, color: '#fff', border: '1.5px solid #334155', padding: '12px 28px', borderRadius: 10, textDecoration: 'none' }}>
+              Contact support
+            </Link>
+          </div>
+        </section>
+
+        {/* ═══ CTA BANNER ═══ */}
+        <section style={{ padding: '80px 24px', background: '#1e293b' }}>
           <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
             <h2 className="font-display" style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 700, color: '#fff' }}>
               Ready to find your next customers?
