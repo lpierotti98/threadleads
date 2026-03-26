@@ -50,44 +50,52 @@ export async function POST(request: NextRequest) {
     for (const kw of keywords) {
       const query = encodeURIComponent(kw.text);
 
-      // Search Reddit
+      // Search Reddit via public RSS feed
       try {
-        const redditUrl = `https://www.reddit.com/search.json?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`;
+        const redditUrl = `https://www.reddit.com/search.rss?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`;
         const redditRes = await fetch(redditUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (compatible; ThreadLeads/1.0)',
+            'Accept': 'application/rss+xml, application/xml, text/xml',
           },
         });
 
         console.log(`[scan:reddit] URL: ${redditUrl}`);
         console.log(`[scan:reddit] Status: ${redditRes.status}`);
-        if (redditRes.status !== 200) {
-          const errText = await redditRes.text();
-          console.log(`[scan:reddit] Error response:`, errText.substring(0, 200));
-        }
 
         // Rate limit: wait 1s between Reddit requests
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        if (redditRes.ok) {
-          const redditData = await redditRes.json();
-          const posts = redditData?.data?.children || [];
-          redditFound += posts.length;
+        if (redditRes.status !== 200) {
+          const errText = await redditRes.text();
+          console.log(`[scan:reddit] Error response:`, errText.substring(0, 200));
+        } else {
+          const rssText = await redditRes.text();
 
-          // Log first 3 titles to confirm Reddit API is returning real data
-          const preview = posts.slice(0, 3).map((p: { data: { title: string } }) => p.data.title);
-          console.log(`[scan:reddit] First ${preview.length} titles for "${kw.text}":`, preview);
+          // Parse RSS XML entries
+          const entries = Array.from(rssText.matchAll(/<entry>([\s\S]*?)<\/entry>/g));
+          const posts = entries.map(match => {
+            const entry = match[1];
+            const title = entry.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() || '';
+            const entryUrl = entry.match(/<link[^>]*href="([^"]*)"[^>]*\/>/)?.[1] || '';
+            const content = entry.match(/<content[^>]*>([\s\S]*?)<\/content>/)?.[1]?.replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').substring(0, 500).trim() || '';
+            const subreddit = entryUrl.match(/reddit\.com\/r\/([^/]+)/)?.[1] || '';
+            return { title, url: entryUrl, content, subreddit };
+          }).filter(p => p.title && p.url);
+
+          redditFound += posts.length;
+          console.log(`[scan:reddit] Found ${posts.length} posts for "${kw.text}"`);
+
+          // Log first 3 titles to confirm real data
+          const preview = posts.slice(0, 3).map(p => p.title);
+          console.log(`[scan:reddit] First ${preview.length} titles:`, preview);
 
           for (const post of posts) {
-            const d = post.data;
-            const url = `https://www.reddit.com${d.permalink}`;
-
             // Check for duplicate
             const { data: existing } = await serviceClient
               .from('threads')
               .select('id')
-              .eq('url', url)
+              .eq('url', post.url)
               .eq('user_id', user.id)
               .maybeSingle();
 
@@ -95,22 +103,19 @@ export async function POST(request: NextRequest) {
 
             // Score with Claude
             try {
-              const result = await scoreThread(
-                d.title,
-                d.selftext?.substring(0, 500) || ''
-              );
+              const result = await scoreThread(post.title, post.content);
 
-              console.log(`[scan:reddit:raw] "${d.title}" — raw Claude response:`, result._raw);
-              console.log(`[scan:reddit] "${d.title}" — score: ${result.score}, urgency: ${result.urgency}`);
+              console.log(`[scan:reddit:raw] "${post.title}" — raw Claude response:`, result._raw);
+              console.log(`[scan:reddit] "${post.title}" — score: ${result.score}, urgency: ${result.urgency}`);
 
               if (result.score >= MIN_SCORE) {
                 await serviceClient.from('threads').insert({
                   user_id: user.id,
                   source: 'reddit',
-                  title: d.title,
-                  url,
-                  content_preview: (d.selftext || '').substring(0, 300),
-                  subreddit: d.subreddit,
+                  title: post.title,
+                  url: post.url,
+                  content_preview: post.content.substring(0, 300),
+                  subreddit: post.subreddit,
                   score: result.score,
                   urgency: result.urgency,
                   score_reason: result.reason,
@@ -121,7 +126,7 @@ export async function POST(request: NextRequest) {
                 totalSaved++;
               }
             } catch (err) {
-              console.error(`[scan:reddit:error] Failed to score "${d.title}":`, err);
+              console.error(`[scan:reddit:error] Failed to score "${post.title}":`, err);
               // Skip this thread and continue
             }
           }
