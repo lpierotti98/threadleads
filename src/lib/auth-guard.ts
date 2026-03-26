@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PLANS } from '@/lib/stripe';
 
+const TESTER_EMAILS = ['pm.marine@admasol.com'];
+
+function isTester(email: string): boolean {
+  return TESTER_EMAILS.includes(email.toLowerCase());
+}
+
 export interface AuthResult {
   userId: string;
   email: string;
@@ -77,11 +83,25 @@ export async function authenticateAndAuthorize(): Promise<
     if (lastDate !== today) scansToday = 0;
   }
 
+  const email = user.email || '';
+
+  if (isTester(email)) {
+    return {
+      ok: true,
+      auth: {
+        userId: user.id,
+        email,
+        plan: 'pro',
+        usage: { scans_today: 0, replies_this_month: 0 },
+      },
+    };
+  }
+
   return {
     ok: true,
     auth: {
       userId: user.id,
-      email: user.email || '',
+      email,
       plan,
       usage: {
         scans_today: scansToday,
@@ -96,6 +116,7 @@ export const REPLY_LIMITS: Record<string, number> = { starter: 50, pro: 200 };
 export const KEYWORD_LIMITS: Record<string, number> = { starter: 5, pro: 10 };
 
 export function checkScanLimit(auth: AuthResult): LimitResult {
+  if (isTester(auth.email)) return { allowed: true };
   if (!auth.plan) {
     return { allowed: false, reason: 'Active subscription required to scan.' };
   }
@@ -112,6 +133,7 @@ export function checkScanLimit(auth: AuthResult): LimitResult {
 }
 
 export function checkReplyLimit(auth: AuthResult): LimitResult {
+  if (isTester(auth.email)) return { allowed: true };
   if (!auth.plan) {
     return { allowed: false, reason: 'Active subscription required to generate replies.' };
   }
@@ -128,6 +150,7 @@ export function checkReplyLimit(auth: AuthResult): LimitResult {
 }
 
 export function checkKeywordGenLimit(auth: AuthResult): LimitResult {
+  if (isTester(auth.email)) return { allowed: true };
   if (!auth.plan) {
     return { allowed: false, reason: 'Active subscription required to generate keywords.' };
   }
