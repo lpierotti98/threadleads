@@ -10,25 +10,34 @@ interface Props {
   onMarkContacted: (id: string) => void;
 }
 
-function scoreBorderColor(score: number) {
-  if (score >= 80) return 'border-l-emerald-500';
-  if (score >= 60) return 'border-l-amber-500';
-  return 'border-l-gray-300';
+function urgencyBorderColor(urgency: string) {
+  const colors: Record<string, string> = {
+    high: 'border-l-red-500',
+    medium: 'border-l-amber-400',
+    low: 'border-l-emerald-400',
+  };
+  return colors[urgency] || colors.low;
 }
 
-function scoreBadgeColor(score: number) {
-  if (score >= 80) return 'bg-emerald-100 text-emerald-700';
-  if (score >= 60) return 'bg-amber-100 text-amber-700';
-  return 'bg-gray-100 text-gray-600';
+function scoreBadge(score: number) {
+  if (score >= 80) return 'bg-emerald-500 text-white';
+  if (score >= 60) return 'bg-amber-500 text-white';
+  if (score >= 40) return 'bg-orange-400 text-white';
+  return 'bg-gray-400 text-white';
 }
 
 function urgencyBadge(urgency: string) {
   const colors: Record<string, string> = {
-    high: 'bg-red-100 text-red-700',
-    medium: 'bg-amber-100 text-amber-700',
-    low: 'bg-gray-100 text-gray-600',
+    high: 'bg-red-50 text-red-600 ring-1 ring-red-200',
+    medium: 'bg-amber-50 text-amber-600 ring-1 ring-amber-200',
+    low: 'bg-gray-50 text-gray-500 ring-1 ring-gray-200',
   };
   return colors[urgency] || colors.low;
+}
+
+function sourceBadge(source: string) {
+  if (source === 'reddit') return 'bg-orange-600 text-white';
+  return 'bg-amber-500 text-white';
 }
 
 export default function ThreadCard({
@@ -41,49 +50,60 @@ export default function ThreadCard({
 
   return (
     <div
-      className={`bg-white rounded-xl border border-gray-200 border-l-4 ${scoreBorderColor(
-        thread.score
-      )} p-5 transition-all hover:shadow-md ${
-        thread.marked_done ? 'opacity-50' : ''
+      className={`bg-white rounded-xl border border-gray-100 border-l-4 ${urgencyBorderColor(
+        thread.urgency
+      )} p-5 card-hover shadow-sm ${
+        thread.marked_done ? 'opacity-40' : ''
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${sourceBadge(
+                thread.source
+              )}`}
+            >
               {thread.source === 'reddit' ? 'Reddit' : 'HN'}
             </span>
             {thread.subreddit && (
-              <span className="text-xs text-gray-500">
+              <span className="text-[11px] font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
                 r/{thread.subreddit}
               </span>
             )}
             <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full ${scoreBadgeColor(
+              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${scoreBadge(
                 thread.score
               )}`}
             >
-              {thread.score}/100
+              {thread.score}
             </span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full ${urgencyBadge(
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${urgencyBadge(
                 thread.urgency
               )}`}
             >
               {thread.urgency}
             </span>
-            <span className="text-xs text-gray-400">{timeAgo}</span>
+            <span className="text-[11px] text-gray-400 ml-auto flex-shrink-0">
+              {timeAgo}
+            </span>
           </div>
+
           <a
             href={thread.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors flex items-center gap-1.5"
+            className="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5 leading-snug"
           >
             {thread.title}
-            <ExternalLink size={14} className="text-gray-400 flex-shrink-0" />
+            <ExternalLink
+              size={13}
+              className="text-gray-300 flex-shrink-0"
+            />
           </a>
-          <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">
+
+          <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
             {thread.score_reason}
           </p>
         </div>
@@ -92,34 +112,34 @@ export default function ThreadCard({
           <button
             onClick={() => onGenerateReply(thread)}
             disabled={thread.marked_done}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all"
           >
-            <MessageSquare size={14} />
+            <MessageSquare size={13} />
             Generate Reply
           </button>
           <button
             onClick={() => onMarkContacted(thread.id)}
             disabled={thread.marked_contacted}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
               thread.marked_contacted
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200'
+                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 ring-1 ring-gray-200'
             }`}
           >
-            <Phone size={14} />
-            {thread.marked_contacted ? 'Contacted' : 'Contacted'}
+            <Phone size={13} />
+            {thread.marked_contacted ? 'Contacted' : 'Contact'}
           </button>
           <button
             onClick={() => onMarkDone(thread.id)}
             disabled={thread.marked_done}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
               thread.marked_done
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200'
+                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 ring-1 ring-gray-200'
             }`}
           >
-            <Check size={14} />
-            {thread.marked_done ? 'Done' : 'Done'}
+            <Check size={13} />
+            Done
           </button>
         </div>
       </div>

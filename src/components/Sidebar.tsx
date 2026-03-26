@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -35,38 +36,58 @@ export default function Sidebar() {
 
   const nav = (
     <>
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-white tracking-tight">
-          Thread<span className="text-indigo-400">Leads</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">Forum lead intelligence</p>
+      <div className="p-6 pb-4">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+            <Zap size={16} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-white tracking-tight leading-none">
+              Thread<span className="text-indigo-400">Leads</span>
+            </h1>
+            <p className="text-[10px] text-slate-500 font-medium tracking-wide uppercase mt-0.5">
+              Lead Intelligence
+            </p>
+          </div>
+        </Link>
       </div>
-      <nav className="flex-1 px-3 space-y-1">
+
+      <div className="px-4 mb-2">
+        <div className="h-px bg-slate-800" />
+      </div>
+
+      <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
+          const active =
+            pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                 active
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/25'
+                  : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'
               }`}
             >
-              <item.icon size={18} />
+              <item.icon size={17} strokeWidth={active ? 2.2 : 1.8} />
               {item.label}
             </Link>
           );
         })}
       </nav>
+
+      <div className="px-4 mb-2">
+        <div className="h-px bg-slate-800" />
+      </div>
+
       <div className="p-3">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-slate-500 hover:bg-slate-800/80 hover:text-slate-300 transition-all w-full"
         >
-          <LogOut size={18} />
+          <LogOut size={17} strokeWidth={1.8} />
           Log out
         </button>
       </div>
@@ -75,25 +96,22 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-slate-900 text-white rounded-xl shadow-lg"
       >
-        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        {mobileOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-900 flex flex-col transform transition-transform lg:translate-x-0 ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-[260px] bg-[#0f172a] flex flex-col transform transition-transform lg:translate-x-0 border-r border-slate-800/50 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

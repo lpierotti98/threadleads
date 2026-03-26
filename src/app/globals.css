@@ -3,5 +3,19 @@
 @tailwind utilities;
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-slate-50 text-gray-900 antialiased;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Premium card hover */
+.card-hover {
+  @apply transition-all duration-200 ease-out;
+}
+.card-hover:hover {
+  @apply shadow-lg shadow-gray-200/50 -translate-y-0.5;
 }
