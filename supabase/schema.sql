@@ -6,8 +6,12 @@ create table if not exists users_settings (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade not null unique,
   keywords jsonb default '[]'::jsonb,
+  product_mention text,
   created_at timestamptz default now()
 );
+
+-- Migration: if table already exists, add the column
+-- alter table users_settings add column if not exists product_mention text;
 
 -- Scored threads
 create table if not exists threads (

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Copy, Check, Loader2 } from 'lucide-react';
 import type { Thread } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
 
 interface Props {
   thread: Thread;
@@ -15,6 +16,24 @@ export default function ReplyModal({ thread, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [mentionProduct, setMentionProduct] = useState(false);
+  const [productMentionText, setProductMentionText] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchProductMention() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('users_settings')
+        .select('product_mention')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      setProductMentionText(data?.product_mention || null);
+    }
+    fetchProductMention();
+  }, []);
 
   async function handleGenerate() {
     setLoading(true);
@@ -26,9 +45,8 @@ export default function ReplyModal({ thread, onClose }: Props) {
           threadId: thread.id,
           title: thread.title,
           content: thread.content_preview,
-          ...(mentionProduct && {
-            productMention:
-              'ThreadLeads (threadleads-b445.vercel.app) - monitors Reddit and HN for buying intent signals and generates expert AI replies to get inbound leads',
+          ...(mentionProduct && productMentionText && {
+            productMention: productMentionText,
           }),
         }),
       });
@@ -80,17 +98,28 @@ export default function ReplyModal({ thread, onClose }: Props) {
 
           {!generated && (
             <div className="space-y-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={mentionProduct}
-                  onChange={(e) => setMentionProduct(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-xs text-gray-500">
-                  Mention ThreadLeads at the end
-                </span>
-              </label>
+              {productMentionText && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mentionProduct}
+                    onChange={(e) => setMentionProduct(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs text-gray-500">
+                    Mention your product at the end
+                  </span>
+                </label>
+              )}
+              {!productMentionText && (
+                <p className="text-xs text-gray-400">
+                  Set up a product mention in{' '}
+                  <a href="/settings" className="text-indigo-600 hover:underline">
+                    Settings
+                  </a>{' '}
+                  to include it in generated replies.
+                </p>
+              )}
               <button
                 onClick={handleGenerate}
                 disabled={loading}

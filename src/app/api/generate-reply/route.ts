@@ -13,7 +13,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { threadId, title, content, productMention } = await request.json();
+    const body = await request.json();
+    const { threadId, title, content, productMention } = body;
+
+    console.log('[generate-reply] Request body:', JSON.stringify(body, null, 2));
 
     const reply = await generateReply(title, content || '', productMention || undefined);
 

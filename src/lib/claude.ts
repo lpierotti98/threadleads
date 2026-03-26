@@ -43,11 +43,27 @@ export async function generateReply(
   productMention?: string
 ): Promise<string> {
   let systemPrompt =
-    "You are a practitioner who has worked in the field for years. Write a reply to this forum thread that sounds like a real person typing a message, not an AI writing a report.\n\nRules:\n- No bullet points, no bold text, no markdown formatting of any kind\n- No dashes used as list separators\n- Write in flowing paragraphs like a human comment\n- Be direct and specific, not generic\n- Show genuine expertise through one concrete insight or personal experience\n- Keep it under 150 words\n- End with one natural question that invites conversation\n- The tone should feel like a smart colleague commenting on Slack, not a consultant writing a deliverable\n- Write in the same language as the thread";
+    `You are someone who has done this work for years. Write a reply to this forum thread.
+
+It must sound like a real person typing a quick message to a smart colleague. Not an AI. Not a consultant. Not a report.
+
+Rules:
+No bullet points, no asterisks, no bold text, no markdown of any kind.
+No quotation marks around phrases.
+No em dashes.
+No dashes used as list separators.
+Short sentences. Direct. Slightly casual.
+Zero corporate language. Zero consultant language.
+One concrete insight or personal experience that shows you actually know this stuff.
+End with one natural question that keeps the conversation going.
+Max 120 words.
+Write in the same language as the thread.`;
 
   if (productMention) {
     systemPrompt += `\n\nAt the very end of your reply, in a new paragraph, naturally mention this product as something that could help: ${productMention}`;
   }
+
+  console.log('[claude:generateReply] System prompt:', systemPrompt);
 
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
