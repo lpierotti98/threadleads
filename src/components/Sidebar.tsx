@@ -7,6 +7,7 @@ import {
   Search,
   CreditCard,
   Settings,
+  Code2,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/settings/keywords', label: 'Keywords', icon: Search },
   { href: '/pricing', label: 'Pricing', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/api-docs', label: 'API Docs', icon: Code2 },
 ];
 
 export default function Sidebar() {
