@@ -79,20 +79,33 @@ export default function ReplyModal({ thread, onClose }: Props) {
           </div>
 
           {!generated && (
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Expert Reply with AI'
-              )}
-            </button>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mentionProduct}
+                  onChange={(e) => setMentionProduct(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-xs text-gray-500">
+                  Mention ThreadLeads at the end
+                </span>
+              </label>
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Expert Reply with AI'
+                )}
+              </button>
+            </div>
           )}
 
           {generated && (
@@ -124,17 +137,6 @@ export default function ReplyModal({ thread, onClose }: Props) {
                 rows={8}
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={mentionProduct}
-                  onChange={(e) => setMentionProduct(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-xs text-gray-500">
-                  Mention ThreadLeads at the end
-                </span>
-              </label>
               <p className="text-xs text-gray-400">
                 Edit the reply above before copying. Make it your own.
               </p>
