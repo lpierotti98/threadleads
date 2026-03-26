@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { Check, Sun, Moon, Monitor } from 'lucide-react';
+import { Check, Sun, Moon, Monitor, Copy, Trash2, Key, X } from 'lucide-react';
 import { useTheme, type Theme } from '@/lib/theme';
 import { useToast } from '@/components/Toast';
 
@@ -13,6 +13,10 @@ export default function SettingsPage() {
   const [usage, setUsage] = useState({ scans_today: 0, replies_this_month: 0 });
   const [productMention, setProductMention] = useState('');
   const [pmSaved, setPmSaved] = useState(false);
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; last_used_at: string | null; created_at: string }>>([]);
+  const [newKeyValue, setNewKeyValue] = useState<string | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
+  const [generatingKey, setGeneratingKey] = useState(false);
   const [emailDigest, setEmailDigest] = useState(false);
   const [alertHigh, setAlertHigh] = useState(false);
   const [defaultDays, setDefaultDays] = useState(7);
@@ -42,7 +46,34 @@ export default function SettingsPage() {
       if (u) setUsage(u);
     }
     load();
+    fetchApiKeys();
   }, [supabase]);
+
+  async function fetchApiKeys() {
+    const res = await fetch('/api/settings/api-keys');
+    const data = await res.json();
+    setApiKeys(data.keys || []);
+  }
+
+  async function handleGenerateKey() {
+    setGeneratingKey(true);
+    const res = await fetch('/api/settings/api-keys', { method: 'POST' });
+    const data = await res.json();
+    if (data.key) {
+      setNewKeyValue(data.key);
+      await fetchApiKeys();
+      toast('API key generated', 'success');
+    } else {
+      toast(data.error || 'Failed to generate key', 'error');
+    }
+    setGeneratingKey(false);
+  }
+
+  async function handleDeleteKey(id: string) {
+    await fetch(`/api/settings/api-keys/${id}`, { method: 'DELETE' });
+    await fetchApiKeys();
+    toast('API key deleted', 'success');
+  }
 
   async function handleSaveProductMention() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -282,6 +313,90 @@ export default function SettingsPage() {
               {pmSaved ? <><Check size={13} /> saved</> : 'save'}
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* API Access */}
+      <section>
+        <p className="font-mono text-[10px] uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>
+          API Access
+        </p>
+        <div className="border p-5 space-y-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>API Keys</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                Use keys to access the <Link href="/api-docs" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>ThreadLeads API</Link>. Max 3 keys.
+              </p>
+            </div>
+            <button
+              onClick={handleGenerateKey}
+              disabled={generatingKey || apiKeys.length >= 3}
+              className="font-mono text-xs font-bold uppercase tracking-wider px-4 py-2 disabled:opacity-30 flex items-center gap-1.5 transition-colors"
+              style={{ background: 'var(--accent)', color: 'white' }}
+            >
+              <Key size={12} />
+              {generatingKey ? 'generating...' : 'new key'}
+            </button>
+          </div>
+
+          {/* New key reveal modal */}
+          {newKeyValue && (
+            <div className="p-4 border animate-fade-slide-in" style={{ background: 'var(--surface-el)', borderColor: 'var(--accent)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+                  New API Key — save it now
+                </p>
+                <button onClick={() => setNewKeyValue(null)} style={{ color: 'var(--text-secondary)' }}>
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-xs flex-1 p-2 border" style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)', wordBreak: 'break-all' }}>
+                  {newKeyValue}
+                </code>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(newKeyValue); setKeyCopied(true); toast('Key copied', 'success'); setTimeout(() => setKeyCopied(false), 2000); }}
+                  className="font-mono text-xs flex items-center gap-1 px-3 py-2 border transition-colors"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  {keyCopied ? <><Check size={12} /> copied</> : <><Copy size={12} /> copy</>}
+                </button>
+              </div>
+              <p className="font-mono text-[10px] mt-2" style={{ color: 'var(--amber, #e8a020)' }}>
+                This key will not be shown again. Store it securely.
+              </p>
+            </div>
+          )}
+
+          {/* Key list */}
+          {apiKeys.length > 0 && (
+            <div className="space-y-px" style={{ background: 'var(--border)' }}>
+              {apiKeys.map((k) => (
+                <div key={k.id} className="flex items-center justify-between p-3" style={{ background: 'var(--surface)' }}>
+                  <div>
+                    <p className="font-mono text-xs" style={{ color: 'var(--text)' }}>
+                      {k.name}
+                      <span className="ml-2" style={{ color: 'var(--text-secondary)' }}>
+                        tl_live_****
+                      </span>
+                    </p>
+                    <p className="font-mono text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                      Created {new Date(k.created_at).toLocaleDateString()}
+                      {k.last_used_at && ` — Last used ${new Date(k.last_used_at).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteKey(k.id)}
+                    className="opacity-40 hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--red)' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

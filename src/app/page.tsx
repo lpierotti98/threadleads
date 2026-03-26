@@ -275,8 +275,37 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ═══ API / DEVELOPERS ═══ */}
+        <section style={{ padding: '100px 24px', background: SURFACE }}>
+          <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: ACCENT, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>For developers</p>
+            <h2 className="font-display" style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: TEXT, marginBottom: 16 }}>
+              Built for your stack
+            </h2>
+            <p style={{ fontSize: 16, color: TEXT2, lineHeight: 1.7, maxWidth: 500, margin: '0 auto 32px' }}>
+              Integrate buying intent data into your CRM, Slack, or custom tools with our REST API.
+            </p>
+            <pre
+              style={{
+                background: '#0f172a', color: '#94a3b8', borderRadius: 12, padding: 24,
+                fontSize: 13, lineHeight: 1.7, fontFamily: "'IBM Plex Mono', monospace",
+                textAlign: 'left', overflow: 'auto', maxWidth: 560, margin: '0 auto',
+              }}
+            >
+              {`curl -X POST /api/v1/scan \\
+  -H "Authorization: Bearer tl_live_..." \\
+  -d '{"keywords": ["AI support tool"]}'
+
+# → { "threads": [{ "score": 87, ... }] }`}
+            </pre>
+            <Link href="/api-docs" style={{ display: 'inline-block', marginTop: 24, fontSize: 14, fontWeight: 600, color: ACCENT, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              Read the API docs →
+            </Link>
+          </div>
+        </section>
+
         {/* ═══ PRICING ═══ */}
-        <section id="pricing" style={{ padding: '100px 24px', background: SURFACE }}>
+        <section id="pricing" style={{ padding: '100px 24px', background: BG }}>
           <div
             ref={pricing.ref}
             className={`section-in ${pricing.visible ? 'visible' : ''}`}
