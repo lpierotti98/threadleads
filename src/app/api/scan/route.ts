@@ -50,14 +50,17 @@ export async function POST(request: NextRequest) {
 
       // Search Reddit
       try {
-        const redditRes = await fetch(
-          `https://www.reddit.com/search.json?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`,
-          {
-            headers: {
-              'User-Agent': 'ThreadLeads/1.0',
-            },
-          }
-        );
+        const redditUrl = `https://www.reddit.com/search.json?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`;
+        const redditRes = await fetch(redditUrl, {
+          headers: { 'User-Agent': 'ThreadLeads/1.0' },
+        });
+
+        console.log(`[scan:reddit] URL: ${redditUrl}`);
+        console.log(`[scan:reddit] Status: ${redditRes.status}`);
+        if (!redditRes.ok) {
+          console.log(`[scan:reddit] Error response:`, await redditRes.text());
+        }
+
         if (redditRes.ok) {
           const redditData = await redditRes.json();
           const posts = redditData?.data?.children || [];
