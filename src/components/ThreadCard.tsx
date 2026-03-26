@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Check, MessageSquare, Phone } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import type { Thread } from '@/lib/types';
 
 interface Props {
@@ -10,34 +10,17 @@ interface Props {
   onMarkContacted: (id: string) => void;
 }
 
-function urgencyBorderColor(urgency: string) {
-  const colors: Record<string, string> = {
-    high: 'border-l-red-500',
-    medium: 'border-l-amber-400',
-    low: 'border-l-emerald-400',
+function urgencyColor(urgency: string) {
+  const c: Record<string, string> = {
+    high: 'var(--red)',
+    medium: 'var(--amber)',
+    low: 'var(--green)',
   };
-  return colors[urgency] || colors.low;
+  return c[urgency] || c.low;
 }
 
-function scoreBadge(score: number) {
-  if (score >= 80) return 'bg-emerald-500 text-white';
-  if (score >= 60) return 'bg-amber-500 text-white';
-  if (score >= 40) return 'bg-orange-400 text-white';
-  return 'bg-gray-400 text-white';
-}
-
-function urgencyBadge(urgency: string) {
-  const colors: Record<string, string> = {
-    high: 'bg-red-50 text-red-600 ring-1 ring-red-200',
-    medium: 'bg-amber-50 text-amber-600 ring-1 ring-amber-200',
-    low: 'bg-gray-50 text-gray-500 ring-1 ring-gray-200',
-  };
-  return colors[urgency] || colors.low;
-}
-
-function sourceBadge(source: string) {
-  if (source === 'reddit') return 'bg-orange-600 text-white';
-  return 'bg-amber-500 text-white';
+function sourceColor(source: string) {
+  return source === 'reddit' ? '#ff4500' : '#ff6600';
 }
 
 export default function ThreadCard({
@@ -50,96 +33,111 @@ export default function ThreadCard({
 
   return (
     <div
-      className={`bg-white rounded-xl border border-gray-100 border-l-4 ${urgencyBorderColor(
-        thread.urgency
-      )} p-5 card-hover shadow-sm ${
-        thread.marked_done ? 'opacity-40' : ''
-      }`}
+      className="border-l-[3px] border p-5 transition-colors hover:border-[var(--text-secondary)]"
+      style={{
+        background: thread.marked_done ? 'var(--bg)' : 'var(--surface)',
+        borderColor: 'var(--border)',
+        borderLeftColor: urgencyColor(thread.urgency),
+        opacity: thread.marked_done ? 0.4 : 1,
+      }}
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {/* Meta row */}
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${sourceBadge(
-                thread.source
-              )}`}
+              className="font-mono text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: sourceColor(thread.source) }}
             >
-              {thread.source === 'reddit' ? 'Reddit' : 'HN'}
+              {thread.source === 'reddit' ? 'reddit' : 'hn'}
             </span>
             {thread.subreddit && (
-              <span className="text-[11px] font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+              <span
+                className="font-mono text-[10px]"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 r/{thread.subreddit}
               </span>
             )}
             <span
-              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${scoreBadge(
-                thread.score
-              )}`}
-            >
-              {thread.score}
-            </span>
-            <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${urgencyBadge(
-                thread.urgency
-              )}`}
+              className="font-mono text-[10px] uppercase tracking-wider"
+              style={{ color: urgencyColor(thread.urgency) }}
             >
               {thread.urgency}
             </span>
-            <span className="text-[11px] text-gray-400 ml-auto flex-shrink-0">
+            <span
+              className="font-mono text-[10px] ml-auto"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {timeAgo}
             </span>
           </div>
 
-          <a
-            href={thread.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5 leading-snug"
-          >
-            {thread.title}
-            <ExternalLink
-              size={13}
-              className="text-gray-300 flex-shrink-0"
-            />
-          </a>
-
-          <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
-            {thread.score_reason}
-          </p>
+          {/* Title */}
+          <div className="flex items-start gap-3">
+            <span
+              className="font-mono text-2xl font-bold leading-none flex-shrink-0 mt-0.5"
+              style={{ color: 'var(--accent)' }}
+            >
+              {thread.score}
+            </span>
+            <div className="min-w-0">
+              <a
+                href={thread.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-serif text-base leading-snug hover:underline underline-offset-2 inline-flex items-center gap-1.5"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {thread.title}
+                <ExternalLink
+                  size={12}
+                  className="flex-shrink-0 opacity-30"
+                />
+              </a>
+              <p
+                className="text-xs mt-1.5 line-clamp-2 leading-relaxed"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {thread.score_reason}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Actions */}
+        <div className="flex items-center gap-4 flex-shrink-0 font-mono text-[11px]">
           <button
             onClick={() => onGenerateReply(thread)}
             disabled={thread.marked_done}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all"
+            className="underline-offset-2 hover:underline disabled:opacity-30 disabled:no-underline transition-colors"
+            style={{ color: 'var(--accent)' }}
           >
-            <MessageSquare size={13} />
-            Generate Reply
+            generate
           </button>
           <button
             onClick={() => onMarkContacted(thread.id)}
             disabled={thread.marked_contacted}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-              thread.marked_contacted
-                ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 ring-1 ring-gray-200'
-            }`}
+            className="underline-offset-2 hover:underline disabled:opacity-30 disabled:no-underline transition-colors"
+            style={{
+              color: thread.marked_contacted
+                ? 'var(--green)'
+                : 'var(--text-secondary)',
+            }}
           >
-            <Phone size={13} />
-            {thread.marked_contacted ? 'Contacted' : 'Contact'}
+            {thread.marked_contacted ? 'contacted' : 'contact'}
           </button>
           <button
             onClick={() => onMarkDone(thread.id)}
             disabled={thread.marked_done}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-              thread.marked_done
-                ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 ring-1 ring-gray-200'
-            }`}
+            className="underline-offset-2 hover:underline disabled:opacity-30 disabled:no-underline transition-colors"
+            style={{
+              color: thread.marked_done
+                ? 'var(--green)'
+                : 'var(--text-secondary)',
+            }}
           >
-            <Check size={13} />
-            Done
+            done
           </button>
         </div>
       </div>
@@ -150,9 +148,9 @@ export default function ThreadCard({
 function getTimeAgo(dateString: string): string {
   const diff = Date.now() - new Date(dateString).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${days}d`;
 }

@@ -8,14 +8,7 @@ import FilterBar from '@/components/FilterBar';
 import ThreadCard from '@/components/ThreadCard';
 import ReplyModal from '@/components/ReplyModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import {
-  Loader2,
-  RefreshCw,
-  Inbox,
-  ArrowRight,
-  Lightbulb,
-  X,
-} from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -30,7 +23,6 @@ export default function DashboardPage() {
   const [planName, setPlanName] = useState<string | null>(null);
   const [scanDays, setScanDays] = useState(7);
   const [userEmail, setUserEmail] = useState('');
-  const [showHint, setShowHint] = useState(true);
 
   const supabase = createClient();
 
@@ -119,7 +111,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <Loader2 className="animate-spin" size={24} style={{ color: 'var(--accent)' }} />
       </div>
     );
   }
@@ -127,70 +119,54 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            {planName === 'starter' && (
-              <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-indigo-600 text-white uppercase tracking-wider">
-                Starter
-              </span>
-            )}
-            {planName === 'pro' && (
-              <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 text-white uppercase tracking-wider">
-                Pro
+          <div className="flex items-center gap-3 mb-1">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-secondary)' }}>
+              Signal Feed
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full blink" style={{ background: 'var(--green)' }} />
+            {planName && (
+              <span
+                className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border"
+                style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}
+              >
+                {planName}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {userEmail ? `Welcome back, ${userEmail.split('@')[0]}` : 'Buying intent threads from Reddit & Hacker News'}
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {userEmail ? `${userEmail.split('@')[0]}` : 'buying intent from reddit & hn'}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={scanDays}
             onChange={(e) => setScanDays(Number(e.target.value))}
-            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="font-mono text-xs px-3 py-2.5 border"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              color: 'var(--text-primary)',
+            }}
           >
-            <option value={1}>Last 24h</option>
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 3 months</option>
+            <option value={1}>24h</option>
+            <option value={7}>7d</option>
+            <option value={30}>30d</option>
+            <option value={90}>90d</option>
           </select>
           <button
             onClick={handleScan}
             disabled={scanning || hasSubscription === false}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-sm shadow-indigo-600/25 disabled:opacity-50 disabled:shadow-none transition-all"
+            className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 disabled:opacity-30 transition-colors"
+            style={{ background: 'var(--accent)', color: '#0e0e0f' }}
           >
-            {scanning ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <RefreshCw size={15} />
-            )}
-            {scanning ? 'Scanning...' : 'Scan Now'}
+            {scanning ? 'scanning...' : 'scan now'}
           </button>
         </div>
       </div>
 
       {hasSubscription === false && <UpgradePrompt />}
-
-      {/* Onboarding hint */}
-      {showHint && threads.length === 0 && (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
-          <Lightbulb size={18} className="text-indigo-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-indigo-900">How ThreadLeads works</p>
-            <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
-              1. Add keywords in <Link href="/settings/keywords" className="underline font-semibold">Keywords settings</Link> describing what your customers search for.
-              2. Click <strong>Scan Now</strong> to find threads with buying intent.
-              3. Generate AI replies and post them to start conversations.
-            </p>
-          </div>
-          <button onClick={() => setShowHint(false)} className="text-indigo-400 hover:text-indigo-600">
-            <X size={16} />
-          </button>
-        </div>
-      )}
 
       <MetricCards threads={threads} />
 
@@ -203,25 +179,28 @@ export default function DashboardPage() {
         setKeyword={setKeyword}
       />
 
-      <div className="space-y-3">
+      <div className="space-y-px" style={{ background: 'var(--border)' }}>
         {filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 px-6 text-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Inbox size={28} className="text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              No threads yet
-            </h3>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
-              Add your keywords in settings, then hit Scan Now to discover threads
-              where people are looking for solutions like yours.
+          <div
+            className="py-20 px-6 text-center"
+            style={{ background: 'var(--surface)' }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] mb-3" style={{ color: 'var(--text-secondary)' }}>
+              No signals
+            </p>
+            <p className="font-serif text-xl mb-1" style={{ color: 'var(--text-primary)' }}>
+              No threads found yet
+            </p>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+              Add keywords, then scan to discover buying intent.
             </p>
             <Link
               href="/settings/keywords"
-              className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 shadow-sm shadow-indigo-600/25 transition-all"
+              className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5"
+              style={{ background: 'var(--accent)', color: '#0e0e0f' }}
             >
-              Set up keywords
-              <ArrowRight size={15} />
+              set up keywords
+              <ArrowRight size={13} />
             </Link>
           </div>
         ) : (

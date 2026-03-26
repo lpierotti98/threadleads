@@ -1,6 +1,5 @@
 'use client';
 
-import { Search, MessageSquare, UserCheck, TrendingUp } from 'lucide-react';
 import type { Thread } from '@/lib/types';
 
 interface Props {
@@ -19,54 +18,32 @@ export default function MetricCards({ threads }: Props) {
     : 0;
 
   const metrics = [
-    {
-      label: 'Threads this week',
-      value: thisWeek.length,
-      icon: Search,
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-100',
-    },
-    {
-      label: 'Replies generated',
-      value: repliesGenerated,
-      icon: MessageSquare,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-100',
-    },
-    {
-      label: 'Leads contacted',
-      value: contacted,
-      icon: UserCheck,
-      iconColor: 'text-violet-600',
-      bgColor: 'bg-violet-50',
-      borderColor: 'border-violet-100',
-    },
-    {
-      label: 'Avg. intent score',
-      value: avgScore,
-      icon: TrendingUp,
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-100',
-    },
+    { label: 'threads / 7d', value: thisWeek.length },
+    { label: 'replies', value: repliesGenerated },
+    { label: 'contacted', value: contacted },
+    { label: 'avg score', value: avgScore },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-px" style={{ background: 'var(--border)' }}>
       {metrics.map((m) => (
         <div
           key={m.label}
-          className={`bg-white rounded-xl border ${m.borderColor} p-5 shadow-sm card-hover`}
+          className="p-5"
+          style={{ background: 'var(--surface)' }}
         >
-          <div className="flex items-center justify-between mb-3">
-            <div className={`p-2 rounded-lg ${m.bgColor}`}>
-              <m.icon size={18} className={m.iconColor} />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{m.value}</p>
-          <p className="text-xs font-medium text-gray-500 mt-0.5">{m.label}</p>
+          <p
+            className="font-mono text-3xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {m.value}
+          </p>
+          <p
+            className="font-mono text-[11px] mt-1 uppercase tracking-wider"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {m.label}
+          </p>
         </div>
       ))}
     </div>

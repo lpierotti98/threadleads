@@ -21,9 +21,7 @@ export default function ReplyModal({ thread, onClose }: Props) {
   useEffect(() => {
     async function fetchProductMention() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
         .from('users_settings')
@@ -71,26 +69,28 @@ export default function ReplyModal({ thread, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-xl">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-lg">Generate Reply</h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={18} />
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+      <div
+        className="w-full max-w-2xl max-h-[80vh] overflow-y-auto border"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--text-secondary)' }}>
+            Generate Reply
+          </span>
+          <button onClick={onClose} className="opacity-50 hover:opacity-100 transition-opacity" style={{ color: 'var(--text-primary)' }}>
+            <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-5">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase mb-1">
+            <p className="font-mono text-[9px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>
               Thread
             </p>
-            <p className="text-sm font-semibold">{thread.title}</p>
+            <p className="font-serif text-base" style={{ color: 'var(--text-primary)' }}>{thread.title}</p>
             {thread.content_preview && (
-              <p className="text-xs text-gray-500 mt-1 line-clamp-3">
+              <p className="text-xs mt-1.5 line-clamp-3" style={{ color: 'var(--text-secondary)' }}>
                 {thread.content_preview}
               </p>
             )}
@@ -104,34 +104,33 @@ export default function ReplyModal({ thread, onClose }: Props) {
                     type="checkbox"
                     checked={mentionProduct}
                     onChange={(e) => setMentionProduct(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-3.5 h-3.5"
+                    style={{ accentColor: 'var(--accent)' }}
                   />
-                  <span className="text-xs text-gray-500">
-                    Mention your product at the end
+                  <span className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    mention product at end
                   </span>
                 </label>
               )}
               {!productMentionText && (
-                <p className="text-xs text-gray-400">
+                <p className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                   Set up a product mention in{' '}
-                  <a href="/settings" className="text-indigo-600 hover:underline">
-                    Settings
-                  </a>{' '}
-                  to include it in generated replies.
+                  <a href="/settings" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>settings</a>
                 </p>
               )}
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: 'var(--accent)', color: '#0e0e0f' }}
               >
                 {loading ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Generating...
+                    <Loader2 size={13} className="animate-spin" />
+                    generating...
                   </>
                 ) : (
-                  'Generate Expert Reply with AI'
+                  'generate reply'
                 )}
               </button>
             </div>
@@ -139,48 +138,42 @@ export default function ReplyModal({ thread, onClose }: Props) {
 
           {generated && (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-gray-500 uppercase">
-                Generated Reply
+              <p className="font-mono text-[9px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
+                Reply
               </p>
               <textarea
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 rows={8}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full border p-4 text-sm resize-y"
+                style={{
+                  background: 'var(--surface-el)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text-primary)',
+                }}
               />
               <button
                 onClick={async () => {
                   await navigator.clipboard.writeText(reply);
                   window.open(thread.url, '_blank');
                 }}
-                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors"
+                className="w-full py-3 font-mono text-xs font-bold uppercase tracking-wider"
+                style={{ background: 'var(--accent)', color: '#0e0e0f' }}
               >
-                Copy reply &amp; open thread &rarr;
+                copy &amp; open thread
               </button>
-              <p className="text-xs text-gray-400 text-center">
+              <p className="font-mono text-[10px] text-center" style={{ color: 'var(--text-secondary)' }}>
                 Paste with Ctrl+V directly in the thread
               </p>
               <div className="flex justify-end">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                  className="font-mono text-[11px] underline underline-offset-2 flex items-center gap-1"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  {copied ? (
-                    <>
-                      <Check size={14} />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      Copy to clipboard only
-                    </>
-                  )}
+                  {copied ? <><Check size={12} /> copied</> : <><Copy size={12} /> copy only</>}
                 </button>
               </div>
-              <p className="text-xs text-gray-400">
-                Edit the reply above before copying. Make it your own.
-              </p>
             </div>
           )}
         </div>

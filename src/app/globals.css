@@ -2,20 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0e0e0f;
+  --surface: #141415;
+  --surface-el: #1c1c1e;
+  --border: #2a2a2d;
+  --text-primary: #f0ede8;
+  --text-secondary: #6b6b70;
+  --accent: #e8c547;
+  --accent-hover: #f0d050;
+  --red: #ff4d4d;
+  --amber: #e8a020;
+  --green: #2dd4a0;
+}
+
 body {
-  @apply bg-slate-50 text-gray-900 antialiased;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.font-serif {
+  font-family: 'Instrument Serif', serif;
 }
 
-/* Premium card hover */
-.card-hover {
-  @apply transition-all duration-200 ease-out;
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
 }
-.card-hover:hover {
-  @apply shadow-lg shadow-gray-200/50 -translate-y-0.5;
+
+/* Blinking indicator */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.blink {
+  animation: blink 2s ease-in-out infinite;
+}
+
+/* Sharp focus rings */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }

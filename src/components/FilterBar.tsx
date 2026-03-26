@@ -1,7 +1,5 @@
 'use client';
 
-import { Filter } from 'lucide-react';
-
 interface Props {
   source: string;
   setSource: (v: string) => void;
@@ -20,37 +18,42 @@ export default function FilterBar({
   setKeyword,
 }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center shadow-sm">
-      <div className="flex items-center gap-2 text-gray-400">
-        <Filter size={15} />
-      </div>
-
+    <div
+      className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+    >
       <div className="flex items-center gap-2">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Source
-        </label>
+        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
+          src
+        </span>
         <select
           value={source}
           onChange={(e) => setSource(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="font-mono text-xs px-2 py-1.5 border"
+          style={{
+            background: 'var(--surface-el)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-primary)',
+          }}
         >
-          <option value="all">All</option>
-          <option value="reddit">Reddit</option>
-          <option value="hn">Hacker News</option>
+          <option value="all">all</option>
+          <option value="reddit">reddit</option>
+          <option value="hn">hn</option>
         </select>
       </div>
 
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
-          Score {minScore}+
-        </label>
+        <span className="font-mono text-[10px] uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+          score &ge;{minScore}
+        </span>
         <input
           type="range"
           min={0}
           max={100}
           value={minScore}
           onChange={(e) => setMinScore(Number(e.target.value))}
-          className="w-28 accent-indigo-600"
+          className="w-24"
+          style={{ accentColor: 'var(--accent)' }}
         />
       </div>
 
@@ -59,8 +62,13 @@ export default function FilterBar({
           type="text"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Search threads..."
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          placeholder="filter..."
+          className="font-mono text-xs px-3 py-1.5 border w-full max-w-[200px]"
+          style={{
+            background: 'var(--surface-el)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-primary)',
+          }}
         />
       </div>
     </div>

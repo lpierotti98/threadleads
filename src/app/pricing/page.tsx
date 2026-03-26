@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, ArrowLeft, Zap } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
@@ -10,12 +10,12 @@ const plans = [
     name: 'Starter',
     price: 199,
     planKey: 'starter',
-    description: 'For teams getting started with forum lead gen',
+    desc: '500 scans/day, 50 replies/month',
     features: [
       '500 scans per day',
       '50 reply generations per month',
-      'Reddit & Hacker News monitoring',
-      'AI buying intent scoring',
+      'Reddit & Hacker News',
+      'AI intent scoring',
       'AI reply generation',
     ],
   },
@@ -24,12 +24,12 @@ const plans = [
     price: 399,
     planKey: 'pro',
     popular: true,
-    description: 'For power users who want unlimited access',
+    desc: 'Unlimited everything',
     features: [
       'Unlimited scans',
-      'Unlimited reply generations',
-      'Reddit & Hacker News monitoring',
-      'AI buying intent scoring',
+      'Unlimited replies',
+      'Reddit & Hacker News',
+      'AI intent scoring',
       'AI reply generation',
       'Priority support',
     ],
@@ -43,9 +43,7 @@ export default function PricingPage() {
 
   useEffect(() => {
     async function fetchPlan() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
         .from('subscriptions')
@@ -67,97 +65,95 @@ export default function PricingPage() {
         body: JSON.stringify({ plan: planKey }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
     } finally {
       setLoading(null);
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <div className="bg-[#0f172a] border-b border-slate-800">
+      <div className="border-b" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
-              <Zap size={16} className="text-white" />
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: 'var(--accent)' }}>
+              <span className="font-mono text-xs font-bold" style={{ color: 'var(--accent)' }}>TL</span>
             </div>
-            <span className="text-lg font-bold text-white">
-              Thread<span className="text-indigo-400">Leads</span>
-            </span>
+            <span className="font-serif text-base" style={{ color: 'var(--text-primary)' }}>ThreadLeads</span>
           </Link>
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 font-mono text-xs"
+            style={{ color: 'var(--text-secondary)' }}
           >
-            <ArrowLeft size={15} />
-            Back to Dashboard
+            <ArrowLeft size={13} />
+            dashboard
           </Link>
         </div>
       </div>
 
       {/* Hero */}
-      <div className="bg-[#0f172a] pb-20 pt-12">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <h1 className="text-4xl font-bold text-white">
-            Choose your plan
-          </h1>
-          <p className="text-slate-400 mt-3 text-lg max-w-xl mx-auto">
-            Start turning forum conversations into qualified leads.
-            Cancel anytime.
-          </p>
-        </div>
+      <div className="pt-16 pb-12 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] mb-4" style={{ color: 'var(--text-secondary)' }}>
+          Pricing
+        </p>
+        <h1 className="font-serif text-4xl" style={{ color: 'var(--text-primary)' }}>
+          Choose your plan
+        </h1>
+        <p className="text-sm mt-3 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
+          Turn forum conversations into qualified leads. Cancel anytime.
+        </p>
       </div>
 
       {/* Plans */}
-      <div className="max-w-4xl mx-auto px-6 -mt-12">
-        <div className="grid md:grid-cols-2 gap-6">
+      <div className="max-w-3xl mx-auto px-6 pb-20">
+        <div className="grid md:grid-cols-2 gap-px" style={{ background: 'var(--border)' }}>
           {plans.map((plan) => {
             const isCurrent = currentPlan === plan.planKey;
             return (
               <div
                 key={plan.planKey}
-                className={`bg-white rounded-2xl p-8 relative shadow-xl shadow-gray-200/50 border-2 transition-all ${
-                  isCurrent
-                    ? 'border-emerald-400'
-                    : plan.popular
-                      ? 'border-indigo-600'
-                      : 'border-gray-100'
-                }`}
+                className="p-8 relative"
+                style={{
+                  background: 'var(--surface)',
+                  borderTop: plan.popular ? '2px solid var(--accent)' : '2px solid transparent',
+                }}
               >
+                {plan.popular && !isCurrent && (
+                  <span
+                    className="absolute top-4 right-4 font-mono text-[9px] font-bold uppercase tracking-widest px-2 py-1"
+                    style={{ background: 'var(--accent)', color: '#0e0e0f' }}
+                  >
+                    Popular
+                  </span>
+                )}
                 {isCurrent && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-bold px-4 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider">
-                    <Check size={11} strokeWidth={3} />
-                    Your current plan
-                  </span>
-                )}
-                {!isCurrent && plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
-                    Most Popular
+                  <span
+                    className="absolute top-4 right-4 font-mono text-[9px] font-bold uppercase tracking-widest px-2 py-1"
+                    style={{ background: 'var(--green)', color: '#0e0e0f' }}
+                  >
+                    Current
                   </span>
                 )}
 
-                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
-
-                <div className="mt-5 flex items-baseline gap-1">
-                  <span className="text-5xl font-bold text-gray-900">
+                <p className="font-mono text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                  {plan.name}
+                </p>
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className="font-serif text-5xl" style={{ color: 'var(--text-primary)' }}>
                     ${plan.price}
                   </span>
-                  <span className="text-gray-400 font-medium">/month</span>
+                  <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>/mo</span>
                 </div>
+                <p className="font-mono text-[11px] mt-2" style={{ color: 'var(--text-secondary)' }}>
+                  {plan.desc}
+                </p>
 
-                <ul className="mt-7 space-y-3">
+                <ul className="mt-6 space-y-2.5">
                   {plan.features.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2.5 text-sm text-gray-600"
-                    >
-                      <div className="w-5 h-5 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Check size={12} className="text-emerald-600" />
-                      </div>
+                    <li key={f} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <Check size={13} style={{ color: 'var(--green)' }} />
                       {f}
                     </li>
                   ))}
@@ -166,23 +162,19 @@ export default function PricingPage() {
                 {isCurrent ? (
                   <button
                     disabled
-                    className="w-full mt-8 py-3.5 rounded-xl font-semibold text-sm bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
+                    className="w-full mt-8 py-3 font-mono text-xs font-bold uppercase tracking-wider border"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                   >
-                    Current Plan
+                    current plan
                   </button>
                 ) : (
                   <button
                     onClick={() => handleCheckout(plan.planKey)}
                     disabled={loading === plan.planKey}
-                    className={`w-full mt-8 py-3.5 rounded-xl font-semibold text-sm transition-all ${
-                      plan.popular
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/25'
-                        : 'bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-900/25'
-                    } disabled:opacity-50`}
+                    className="w-full mt-8 py-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-colors"
+                    style={{ background: plan.popular ? 'var(--accent)' : 'var(--text-primary)', color: '#0e0e0f' }}
                   >
-                    {loading === plan.planKey
-                      ? 'Redirecting...'
-                      : `Get started with ${plan.name}`}
+                    {loading === plan.planKey ? 'redirecting...' : `get ${plan.name.toLowerCase()}`}
                   </button>
                 )}
               </div>
@@ -192,30 +184,16 @@ export default function PricingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto px-6 py-16 mt-12">
-        <div className="border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
-              <Zap size={12} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-gray-900">
-              Thread<span className="text-indigo-600">Leads</span>
-            </span>
+      <footer className="border-t" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
+            ThreadLeads &copy; {new Date().getFullYear()}
+          </span>
+          <div className="flex items-center gap-6 font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+            <Link href="/dashboard" className="hover:underline underline-offset-2">dashboard</Link>
+            <Link href="/settings" className="hover:underline underline-offset-2">settings</Link>
+            <Link href="/login" className="hover:underline underline-offset-2">sign in</Link>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-500">
-            <Link href="/dashboard" className="hover:text-gray-900 transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/settings" className="hover:text-gray-900 transition-colors">
-              Settings
-            </Link>
-            <Link href="/login" className="hover:text-gray-900 transition-colors">
-              Sign in
-            </Link>
-          </div>
-          <p className="text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ThreadLeads
-          </p>
         </div>
       </footer>
     </div>
