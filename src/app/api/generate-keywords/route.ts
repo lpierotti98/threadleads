@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
 import {
   authenticateAndAuthorize,
   checkKeywordGenLimit,
   checkRateLimit,
+  getMaxKeywords,
   validateString,
 } from '@/lib/auth-guard';
 
@@ -34,14 +36,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: rateLimit.reason }, { status: 429 });
     }
 
-    // 4. Validate input
+    // 4. Check current keyword count against plan limit
+    const maxKeywords = getMaxKeywords(auth.plan);
+    const serviceClient = createServiceClient();
+    const { data: settings } = await serviceClient
+      .from('users_settings')
+      .select('keywords')
+      .eq('user_id', auth.userId)
+      .maybeSingle();
+
+    const currentCount = (settings?.keywords || []).length;
+    if (currentCount >= maxKeywords) {
+      return NextResponse.json(
+        { error: `Keyword limit reached for your plan (${maxKeywords} keywords on ${auth.plan} plan).` },
+        { status: 429 }
+      );
+    }
+
+    // 5. Validate input
     const body = await request.json();
     const descCheck = validateString(body.description, 'description', 500);
     if (!descCheck.valid) {
       return NextResponse.json({ error: descCheck.error }, { status: 400 });
     }
 
-    // 5. Call Claude
+    // 6. Call Claude
     const message = await getClient().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,

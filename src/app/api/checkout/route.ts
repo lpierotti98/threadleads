@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
               name: `ThreadLeads ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
               description:
                 plan === 'starter'
-                  ? '$49/mo — 50 scans/day, 50 replies/month'
-                  : '$99/mo — 500 scans/day, 500 replies/month',
+                  ? '$49/mo — 1 scan/day, 5 keywords, 50 replies/month'
+                  : '$99/mo — 3 scans/day, 10 keywords, 200 replies/month',
             },
             unit_amount: priceAmount,
             recurring: { interval: 'month' },

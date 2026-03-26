@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!authResult.ok) return authResult.response;
     const { auth } = authResult;
 
-    // 2. Check scan limits BEFORE any API calls
+    // 2. Check scan limit BEFORE starting (never interrupt mid-scan)
     const scanLimit = checkScanLimit(auth);
     if (!scanLimit.allowed) {
       return NextResponse.json({ error: scanLimit.reason }, { status: 429 });
@@ -58,14 +58,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active keywords.' }, { status: 400 });
     }
 
-    // Cap keywords to prevent abuse
-    const activeKeywords = keywords.slice(0, 10);
+    // Enforce keyword cap per plan server-side
+    const maxKw = auth.plan === 'starter' ? 5 : 10;
+    const activeKeywords = keywords.slice(0, maxKw);
 
     console.log(`[scan] Starting scan for ${activeKeywords.length} keyword(s): ${activeKeywords.map((k: { text: string }) => k.text).join(', ')}`);
 
     let totalSaved = 0;
     let redditFound = 0;
     let hnFound = 0;
+    let threadsScored = 0;
 
     for (const kw of activeKeywords) {
       const query = encodeURIComponent(kw.text.substring(0, 100));
@@ -119,6 +121,7 @@ export async function POST(request: NextRequest) {
                 truncateForClaude(post.content)
               );
 
+              threadsScored++;
               console.log(`[scan:reddit] "${post.title.substring(0, 60)}" — score: ${result.score}`);
 
               if (result.score >= MIN_SCORE) {
@@ -182,6 +185,8 @@ export async function POST(request: NextRequest) {
                 truncateForClaude(hit.story_text || '')
               );
 
+              threadsScored++;
+
               if (result.score >= MIN_SCORE) {
                 await serviceClient.from('threads').insert({
                   user_id: auth.userId,
@@ -209,9 +214,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[scan] Found ${redditFound} Reddit, ${hnFound} HN. ${totalSaved} saved (>= ${MIN_SCORE}).`);
+    console.log(`[scan] Scored ${threadsScored} threads. Found ${redditFound} Reddit, ${hnFound} HN. ${totalSaved} saved (>= ${MIN_SCORE}).`);
 
-    // Update usage AFTER successful scan
+    // Increment scan count ONLY after successful completion
     const today = new Date().toISOString().split('T')[0];
     const { data: usageRow } = await serviceClient
       .from('usage')
@@ -223,11 +228,14 @@ export async function POST(request: NextRequest) {
       const lastScanDate = usageRow.last_scan_at
         ? new Date(usageRow.last_scan_at).toISOString().split('T')[0]
         : null;
-      const scansToday = lastScanDate === today ? usageRow.scans_today + 1 : 1;
+      const isNewDay = lastScanDate !== today;
 
       await serviceClient
         .from('usage')
-        .update({ scans_today: scansToday, last_scan_at: new Date().toISOString() })
+        .update({
+          scans_today: isNewDay ? 1 : usageRow.scans_today + 1,
+          last_scan_at: new Date().toISOString(),
+        })
         .eq('user_id', auth.userId);
     } else {
       await serviceClient.from('usage').insert({
@@ -238,7 +246,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ saved: totalSaved });
+    return NextResponse.json({ saved: totalSaved, scored: threadsScored });
   } catch (error) {
     console.error('Scan error:', error);
     return NextResponse.json({ error: 'Scan failed' }, { status: 500 });

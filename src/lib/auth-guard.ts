@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PLANS } from '@/lib/stripe';
 
-interface AuthResult {
+export interface AuthResult {
   userId: string;
   email: string;
   plan: 'starter' | 'pro' | null;
-  usage: { scans_today: number; replies_this_month: number };
+  usage: {
+    scans_today: number;
+    replies_this_month: number;
+  };
 }
 
 interface LimitResult {
@@ -17,8 +20,8 @@ interface LimitResult {
 // Rate limit store: userId -> { timestamps[] }
 const rateLimitMap = new Map<string, number[]>();
 
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10; // max 10 AI requests per minute
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 10;
 
 export function checkRateLimit(userId: string): LimitResult {
   const now = Date.now();
@@ -51,7 +54,6 @@ export async function authenticateAndAuthorize(): Promise<
 
   const serviceClient = createServiceClient();
 
-  // Get subscription
   const { data: sub } = await serviceClient
     .from('subscriptions')
     .select('plan, status')
@@ -61,14 +63,13 @@ export async function authenticateAndAuthorize(): Promise<
 
   const plan = (sub?.plan as 'starter' | 'pro') || null;
 
-  // Get usage
   const { data: usageRow } = await serviceClient
     .from('usage')
     .select('scans_today, replies_this_month, last_scan_at')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  // Reset scans_today if last scan was a different day
+  // Reset daily counters if last scan was a different day
   let scansToday = usageRow?.scans_today || 0;
   if (usageRow?.last_scan_at) {
     const lastDate = new Date(usageRow.last_scan_at).toISOString().split('T')[0];
@@ -90,18 +91,20 @@ export async function authenticateAndAuthorize(): Promise<
   };
 }
 
+const SCAN_LIMITS: Record<string, number> = { starter: 1, pro: 3 };
+const REPLY_LIMITS: Record<string, number> = { starter: 50, pro: 200 };
+const KEYWORD_LIMITS: Record<string, number> = { starter: 5, pro: 10 };
+
 export function checkScanLimit(auth: AuthResult): LimitResult {
   if (!auth.plan) {
     return { allowed: false, reason: 'Active subscription required to scan.' };
   }
 
-  const planConfig = PLANS[auth.plan];
-  const maxScans = auth.plan === 'starter' ? 50 : 500;
-
-  if (auth.usage.scans_today >= maxScans) {
+  const max = SCAN_LIMITS[auth.plan];
+  if (auth.usage.scans_today >= max) {
     return {
       allowed: false,
-      reason: `Daily scan limit reached (${maxScans}/day on ${planConfig.name} plan).`,
+      reason: `Daily scan limit reached (${max}/day on ${PLANS[auth.plan].name} plan).`,
     };
   }
 
@@ -113,13 +116,11 @@ export function checkReplyLimit(auth: AuthResult): LimitResult {
     return { allowed: false, reason: 'Active subscription required to generate replies.' };
   }
 
-  const planConfig = PLANS[auth.plan];
-  const maxReplies = auth.plan === 'starter' ? 50 : 500;
-
-  if (auth.usage.replies_this_month >= maxReplies) {
+  const max = REPLY_LIMITS[auth.plan];
+  if (auth.usage.replies_this_month >= max) {
     return {
       allowed: false,
-      reason: `Monthly reply limit reached (${maxReplies}/month on ${planConfig.name} plan).`,
+      reason: `Monthly reply limit reached (${max}/month on ${PLANS[auth.plan].name} plan).`,
     };
   }
 
@@ -131,6 +132,11 @@ export function checkKeywordGenLimit(auth: AuthResult): LimitResult {
     return { allowed: false, reason: 'Active subscription required to generate keywords.' };
   }
   return { allowed: true };
+}
+
+export function getMaxKeywords(plan: 'starter' | 'pro' | null): number {
+  if (!plan) return 0;
+  return KEYWORD_LIMITS[plan];
 }
 
 /** Truncate content to max chars for Claude API cost protection */
