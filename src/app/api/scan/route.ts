@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active keywords' }, { status: 400 });
     }
 
+    console.log(`[scan] Starting scan for ${keywords.length} keyword(s): ${keywords.map((k: { text: string }) => k.text).join(', ')}`);
+
     const MIN_SCORE = 20; // TODO: restore to 40+ after testing
     let totalSaved = 0;
     let redditFound = 0;
@@ -52,14 +54,21 @@ export async function POST(request: NextRequest) {
       try {
         const redditUrl = `https://www.reddit.com/search.json?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`;
         const redditRes = await fetch(redditUrl, {
-          headers: { 'User-Agent': 'ThreadLeads/1.0' },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json',
+          },
         });
 
         console.log(`[scan:reddit] URL: ${redditUrl}`);
         console.log(`[scan:reddit] Status: ${redditRes.status}`);
-        if (!redditRes.ok) {
-          console.log(`[scan:reddit] Error response:`, await redditRes.text());
+        if (redditRes.status !== 200) {
+          const errText = await redditRes.text();
+          console.log(`[scan:reddit] Error response:`, errText.substring(0, 200));
         }
+
+        // Rate limit: wait 1s between Reddit requests
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         if (redditRes.ok) {
           const redditData = await redditRes.json();
@@ -123,10 +132,16 @@ export async function POST(request: NextRequest) {
 
       // Search Hacker News
       const cutoff = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60;
+      const hnUrl = `https://hn.algolia.com/api/v1/search?query=${query}&tags=ask_hn,show_hn&numericFilters=created_at_i>${cutoff}&hitsPerPage=25`;
       try {
-        const hnRes = await fetch(
-          `https://hn.algolia.com/api/v1/search?query=${query}&tags=ask_hn,show_hn&numericFilters=created_at_i>${cutoff}&hitsPerPage=25`
-        );
+        const hnRes = await fetch(hnUrl);
+
+        console.log(`[scan:hn] URL: ${hnUrl}`);
+        console.log(`[scan:hn] Status: ${hnRes.status}`);
+        if (hnRes.status !== 200) {
+          console.log(`[scan:hn] Error response:`, await hnRes.text());
+        }
+
         if (hnRes.ok) {
           const hnData = await hnRes.json();
           const hits = hnData?.hits || [];
