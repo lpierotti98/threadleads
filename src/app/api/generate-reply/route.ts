@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { threadId, title, content } = await request.json();
+    const { threadId, title, content, productMention } = await request.json();
 
-    const reply = await generateReply(title, content || '');
+    const reply = await generateReply(title, content || '', productMention || undefined);
 
     // Mark reply as generated
     const serviceClient = createServiceClient();

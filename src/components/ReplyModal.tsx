@@ -14,6 +14,7 @@ export default function ReplyModal({ thread, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [mentionProduct, setMentionProduct] = useState(false);
 
   async function handleGenerate() {
     setLoading(true);
@@ -25,6 +26,10 @@ export default function ReplyModal({ thread, onClose }: Props) {
           threadId: thread.id,
           title: thread.title,
           content: thread.content_preview,
+          ...(mentionProduct && {
+            productMention:
+              'ThreadLeads (threadleads-b445.vercel.app) - monitors Reddit and HN for buying intent signals and generates expert AI replies to get inbound leads',
+          }),
         }),
       });
       const data = await res.json();
@@ -119,6 +124,17 @@ export default function ReplyModal({ thread, onClose }: Props) {
                 rows={8}
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mentionProduct}
+                  onChange={(e) => setMentionProduct(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-xs text-gray-500">
+                  Mention ThreadLeads at the end
+                </span>
+              </label>
               <p className="text-xs text-gray-400">
                 Edit the reply above before copying. Make it your own.
               </p>

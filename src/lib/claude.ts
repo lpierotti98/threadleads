@@ -39,13 +39,20 @@ export async function scoreThread(title: string, content: string): Promise<Score
 
 export async function generateReply(
   title: string,
-  content: string
+  content: string,
+  productMention?: string
 ): Promise<string> {
+  let systemPrompt =
+    "You are a practitioner who has worked in the field for years. Write a reply to this forum thread that sounds like a real person typing a message, not an AI writing a report.\n\nRules:\n- No bullet points, no bold text, no markdown formatting of any kind\n- No dashes used as list separators\n- Write in flowing paragraphs like a human comment\n- Be direct and specific, not generic\n- Show genuine expertise through one concrete insight or personal experience\n- Keep it under 150 words\n- End with one natural question that invites conversation\n- The tone should feel like a smart colleague commenting on Slack, not a consultant writing a deliverable\n- Write in the same language as the thread";
+
+  if (productMention) {
+    systemPrompt += `\n\nAt the very end of your reply, in a new paragraph, naturally mention this product as something that could help: ${productMention}`;
+  }
+
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 512,
-    system:
-      "You are a practitioner who has worked in the field for years. Write a reply to this forum thread that sounds like a real person typing a message, not an AI writing a report.\n\nRules:\n- No bullet points, no bold text, no markdown formatting of any kind\n- No dashes used as list separators\n- Write in flowing paragraphs like a human comment\n- Be direct and specific, not generic\n- Show genuine expertise through one concrete insight or personal experience\n- Keep it under 150 words\n- End with one natural question that invites conversation\n- The tone should feel like a smart colleague commenting on Slack, not a consultant writing a deliverable\n- Write in the same language as the thread",
+    system: systemPrompt,
     messages: [
       {
         role: 'user',
