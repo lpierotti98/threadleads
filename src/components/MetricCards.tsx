@@ -26,22 +26,16 @@ export default function MetricCards({ threads }: Props) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-px" style={{ background: 'var(--border)' }}>
-      {metrics.map((m) => (
+      {metrics.map((m, i) => (
         <div
           key={m.label}
-          className="p-5"
-          style={{ background: 'var(--surface)' }}
+          className="p-5 card-hover animate-fade-slide-in"
+          style={{ background: 'var(--surface)', animationDelay: `${i * 80}ms` }}
         >
-          <p
-            className="font-mono text-3xl font-bold"
-            style={{ color: 'var(--text-primary)' }}
-          >
+          <p className="font-mono text-3xl font-bold" style={{ color: 'var(--text)' }}>
             {m.value}
           </p>
-          <p
-            className="font-mono text-[11px] mt-1 uppercase tracking-wider"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <p className="font-mono text-[11px] mt-1 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             {m.label}
           </p>
         </div>

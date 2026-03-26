@@ -5,59 +5,134 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #0e0e0f;
-  --surface: #141415;
-  --surface-el: #1c1c1e;
-  --border: #2a2a2d;
-  --text-primary: #f0ede8;
-  --text-secondary: #6b6b70;
-  --accent: #e8c547;
-  --accent-hover: #f0d050;
-  --red: #ff4d4d;
-  --amber: #e8a020;
-  --green: #2dd4a0;
+  --bg: #ffffff;
+  --bg-secondary: #f8fafc;
+  --surface: #ffffff;
+  --surface-el: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --green: #10b981;
+}
+
+.dark {
+  --bg: #0f172a;
+  --bg-secondary: #1e293b;
+  --surface: #1e293b;
+  --surface-el: #334155;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --accent-soft: #1e1b4b;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green: #34d399;
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.font-serif {
-  font-family: 'Instrument Serif', serif;
+.font-serif { font-family: 'Instrument Serif', serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* Animations */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.font-mono {
-  font-family: 'IBM Plex Mono', monospace;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Blinking indicator */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-.blink {
-  animation: blink 2s ease-in-out infinite;
+
+.animate-fade-slide-in {
+  animation: fadeSlideIn 0.3s ease-out both;
 }
 
-/* Sharp focus rings */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out both;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.3s ease-out both;
+}
+
+.blink { animation: blink 2s ease-in-out infinite; }
+
+/* Card hover */
+.card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.dark .card-hover:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Button press */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Focus rings */
 input:focus, select:focus, textarea:focus {
   outline: none;
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }

@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Trash2, Loader2 } from 'lucide-react';
 import type { Keyword } from '@/lib/types';
+import { useToast } from '@/components/Toast';
 
 const MAX_KEYWORDS = 10;
 
 export default function KeywordsPage() {
+  const { toast } = useToast();
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,7 @@ export default function KeywordsPage() {
     if (!user) return;
     await supabase.from('users_settings').upsert({ user_id: user.id, keywords: updated }, { onConflict: 'user_id' });
     setSaving(false);
+    toast('Keywords saved', 'success');
   }
 
   function addKeyword(text: string) {

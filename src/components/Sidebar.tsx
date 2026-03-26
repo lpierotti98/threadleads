@@ -16,10 +16,10 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
-  { href: '/dashboard', label: 'dashboard', icon: LayoutDashboard },
-  { href: '/settings/keywords', label: 'keywords', icon: Search },
-  { href: '/pricing', label: 'pricing', icon: CreditCard },
-  { href: '/settings', label: 'settings', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/settings/keywords', label: 'Keywords', icon: Search },
+  { href: '/pricing', label: 'Pricing', icon: CreditCard },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -47,18 +47,25 @@ export default function Sidebar() {
     <>
       <div className="p-6 pb-5">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 border border-[var(--accent)] flex items-center justify-center">
+          <div
+            className="w-9 h-9 border flex items-center justify-center transition-colors"
+            style={{ borderColor: 'var(--accent)' }}
+          >
             <span className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
               TL
             </span>
           </div>
-          <span className="font-serif text-lg" style={{ color: 'var(--text-primary)' }}>
+          <span className="font-serif text-lg" style={{ color: 'var(--text)' }}>
             ThreadLeads
           </span>
         </Link>
       </div>
 
-      <nav className="flex-1 px-4 space-y-0.5">
+      <div className="px-4 mb-2">
+        <div className="h-px" style={{ background: 'var(--border)' }} />
+      </div>
+
+      <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + '/');
@@ -67,17 +74,14 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 text-[13px] font-mono transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-[13px] font-mono transition-all duration-200 border-l-2"
               style={{
-                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                color: active ? 'var(--text)' : 'var(--text-secondary)',
+                borderLeftColor: active ? 'var(--accent)' : 'transparent',
+                background: active ? 'var(--accent-soft)' : 'transparent',
               }}
             >
-              <span
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{
-                  background: active ? 'var(--accent)' : 'transparent',
-                }}
-              />
+              <item.icon size={16} strokeWidth={active ? 2.2 : 1.6} />
               {item.label}
             </Link>
           );
@@ -97,7 +101,7 @@ export default function Sidebar() {
           style={{ color: 'var(--text-secondary)' }}
         >
           <LogOut size={13} />
-          logout
+          Log out
         </button>
       </div>
     </>
@@ -107,15 +111,15 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5"
-        style={{ background: '#0a0a0b', color: 'var(--text-primary)' }}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-lg"
+        style={{ background: 'var(--surface)', color: 'var(--text)' }}
       >
         {mobileOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/70 z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -124,10 +128,7 @@ export default function Sidebar() {
         className={`fixed lg:static inset-y-0 left-0 z-40 w-[240px] flex flex-col transform transition-transform lg:translate-x-0 border-r ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{
-          background: '#0a0a0b',
-          borderColor: 'var(--border)',
-        }}
+        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}
       >
         {nav}
       </aside>

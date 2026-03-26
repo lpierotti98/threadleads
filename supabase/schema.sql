@@ -7,11 +7,17 @@ create table if not exists users_settings (
   user_id uuid references auth.users(id) on delete cascade not null unique,
   keywords jsonb default '[]'::jsonb,
   product_mention text,
+  default_days integer default 7,
+  default_min_score integer default 40,
+  default_source text default 'all',
   created_at timestamptz default now()
 );
 
--- Migration: if table already exists, add the column
+-- Migration: if table already exists, add new columns
 -- alter table users_settings add column if not exists product_mention text;
+-- alter table users_settings add column if not exists default_days integer default 7;
+-- alter table users_settings add column if not exists default_min_score integer default 40;
+-- alter table users_settings add column if not exists default_source text default 'all';
 
 -- Scored threads
 create table if not exists threads (

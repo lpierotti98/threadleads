@@ -8,7 +8,9 @@ import FilterBar from '@/components/FilterBar';
 import ThreadCard from '@/components/ThreadCard';
 import ReplyModal from '@/components/ReplyModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import { Loader2, ArrowRight } from 'lucide-react';
+import OnboardingChecklist from '@/components/OnboardingChecklist';
+import { useToast } from '@/components/Toast';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -23,13 +25,14 @@ export default function DashboardPage() {
   const [planName, setPlanName] = useState<string | null>(null);
   const [scanDays, setScanDays] = useState(7);
   const [userEmail, setUserEmail] = useState('');
+  const [hasKeywords, setHasKeywords] = useState(false);
+  const [hasProductMention, setHasProductMention] = useState(false);
+  const { toast } = useToast();
 
   const supabase = createClient();
 
   const fetchThreads = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserEmail(user.email || '');
 
@@ -40,7 +43,6 @@ export default function DashboardPage() {
       .order('created_at', { ascending: false });
 
     console.log('[dashboard:fetchThreads] error:', error, 'rows:', data?.length ?? 0, 'data:', data);
-
     setThreads((data as Thread[]) || []);
     setLoading(false);
   }, [supabase]);
@@ -48,32 +50,34 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchThreads();
 
-    async function checkSub() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    async function loadState() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      setHasSubscription(!!data);
-      setPlanName(data?.plan || null);
+
+      const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', user.id).eq('status', 'active').maybeSingle();
+      setHasSubscription(!!sub);
+      setPlanName(sub?.plan || null);
+
+      const { data: settings } = await supabase.from('users_settings').select('keywords, product_mention').eq('user_id', user.id).maybeSingle();
+      setHasKeywords((settings?.keywords?.length || 0) > 0);
+      setHasProductMention(!!settings?.product_mention);
     }
-    checkSub();
+    loadState();
   }, [fetchThreads, supabase]);
 
   async function handleScan() {
     setScanning(true);
     try {
-      await fetch('/api/scan', {
+      const res = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ days: scanDays }),
       });
+      const data = await res.json();
       await fetchThreads();
+      toast(`Scan complete — ${data.saved || 0} threads saved`, 'success');
+    } catch {
+      toast('Scan failed', 'error');
     } finally {
       setScanning(false);
     }
@@ -81,30 +85,18 @@ export default function DashboardPage() {
 
   async function handleMarkDone(id: string) {
     await supabase.from('threads').update({ marked_done: true }).eq('id', id);
-    setThreads((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, marked_done: true } : t))
-    );
+    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, marked_done: true } : t)));
   }
 
   async function handleMarkContacted(id: string) {
-    await supabase
-      .from('threads')
-      .update({ marked_contacted: true })
-      .eq('id', id);
-    setThreads((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, marked_contacted: true } : t))
-    );
+    await supabase.from('threads').update({ marked_contacted: true }).eq('id', id);
+    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, marked_contacted: true } : t)));
   }
 
   const filtered = threads.filter((t) => {
     if (source !== 'all' && t.source !== source) return false;
     if (t.score < minScore) return false;
-    if (
-      keyword &&
-      !t.title.toLowerCase().includes(keyword.toLowerCase()) &&
-      !t.content_preview?.toLowerCase().includes(keyword.toLowerCase())
-    )
-      return false;
+    if (keyword && !t.title.toLowerCase().includes(keyword.toLowerCase()) && !t.content_preview?.toLowerCase().includes(keyword.toLowerCase())) return false;
     return true;
   });
 
@@ -115,6 +107,9 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const hasScanned = threads.length > 0;
+  const hasReplied = threads.some((t) => t.reply_generated);
 
   return (
     <div className="space-y-6">
@@ -127,10 +122,7 @@ export default function DashboardPage() {
             </span>
             <span className="w-1.5 h-1.5 rounded-full blink" style={{ background: 'var(--green)' }} />
             {planName && (
-              <span
-                className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border"
-                style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}
-              >
+              <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border" style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}>
                 {planName}
               </span>
             )}
@@ -143,12 +135,8 @@ export default function DashboardPage() {
           <select
             value={scanDays}
             onChange={(e) => setScanDays(Number(e.target.value))}
-            className="font-mono text-xs px-3 py-2.5 border"
-            style={{
-              background: 'var(--surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text-primary)',
-            }}
+            className="font-mono text-xs px-3 py-2.5 border rounded-sm"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
           >
             <option value={1}>24h</option>
             <option value={7}>7d</option>
@@ -158,8 +146,8 @@ export default function DashboardPage() {
           <button
             onClick={handleScan}
             disabled={scanning || hasSubscription === false}
-            className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 disabled:opacity-30 transition-colors"
-            style={{ background: 'var(--accent)', color: '#0e0e0f' }}
+            className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 disabled:opacity-30 transition-all"
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {scanning ? 'scanning...' : 'scan now'}
           </button>
@@ -168,49 +156,55 @@ export default function DashboardPage() {
 
       {hasSubscription === false && <UpgradePrompt />}
 
-      <MetricCards threads={threads} />
-
-      <FilterBar
-        source={source}
-        setSource={setSource}
-        minScore={minScore}
-        setMinScore={setMinScore}
-        keyword={keyword}
-        setKeyword={setKeyword}
+      <OnboardingChecklist
+        hasKeywords={hasKeywords}
+        hasScanned={hasScanned}
+        hasReplied={hasReplied}
+        hasProductMention={hasProductMention}
       />
+
+      <MetricCards threads={threads} />
+      <FilterBar source={source} setSource={setSource} minScore={minScore} setMinScore={setMinScore} keyword={keyword} setKeyword={setKeyword} />
 
       <div className="space-y-px" style={{ background: 'var(--border)' }}>
         {filtered.length === 0 ? (
-          <div
-            className="py-20 px-6 text-center"
-            style={{ background: 'var(--surface)' }}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] mb-3" style={{ color: 'var(--text-secondary)' }}>
-              No signals
-            </p>
-            <p className="font-serif text-xl mb-1" style={{ color: 'var(--text-primary)' }}>
-              No threads found yet
-            </p>
+          <div className="py-20 px-6 text-center animate-fade-slide-in" style={{ background: 'var(--surface)' }}>
+            {/* SVG illustration */}
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
+              <rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-secondary)' }} />
+              <path d="M8 20h48M24 30h16M20 38h24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-secondary)' }} />
+            </svg>
+            <p className="font-serif text-xl mb-1" style={{ color: 'var(--text)' }}>No threads yet</p>
             <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
               Add keywords, then scan to discover buying intent.
             </p>
-            <Link
-              href="/settings/keywords"
-              className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5"
-              style={{ background: 'var(--accent)', color: '#0e0e0f' }}
-            >
-              set up keywords
-              <ArrowRight size={13} />
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                href="/settings/keywords"
+                className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 transition-colors"
+                style={{ background: 'var(--accent)', color: 'white' }}
+              >
+                add keywords
+              </Link>
+              <button
+                onClick={handleScan}
+                disabled={scanning || !hasKeywords}
+                className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 border disabled:opacity-30 transition-colors"
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              >
+                {scanning ? 'scanning...' : 'scan now'}
+              </button>
+            </div>
           </div>
         ) : (
-          filtered.map((thread) => (
+          filtered.map((thread, i) => (
             <ThreadCard
               key={thread.id}
               thread={thread}
               onGenerateReply={setSelectedThread}
               onMarkDone={handleMarkDone}
               onMarkContacted={handleMarkContacted}
+              index={i}
             />
           ))
         )}
@@ -219,10 +213,7 @@ export default function DashboardPage() {
       {selectedThread && (
         <ReplyModal
           thread={selectedThread}
-          onClose={() => {
-            setSelectedThread(null);
-            fetchThreads();
-          }}
+          onClose={() => { setSelectedThread(null); fetchThreads(); }}
         />
       )}
     </div>
