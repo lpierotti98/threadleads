@@ -6,8 +6,39 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 const plans = [
-  { name: 'Starter', price: 199, planKey: 'starter', desc: '500 scans/day, 50 replies/month', features: ['500 scans per day', '50 reply generations per month', 'Reddit & Hacker News', 'AI intent scoring', 'AI reply generation'] },
-  { name: 'Pro', price: 399, planKey: 'pro', popular: true, desc: 'Unlimited everything', features: ['Unlimited scans', 'Unlimited replies', 'Reddit & Hacker News', 'AI intent scoring', 'AI reply generation', 'Priority support'] },
+  {
+    name: 'Starter',
+    price: 49,
+    planKey: 'starter',
+    desc: 'Perfect for solo founders and small teams',
+    features: [
+      '50 scans per day',
+      '50 AI reply generations per month',
+      'Reddit & Hacker News monitoring',
+      'AI buying intent scoring (0-100)',
+      'AI reply generator with custom tone',
+      'Product mention toggle',
+      'Keyword AI generator',
+      'Dashboard with filters & metrics',
+    ],
+  },
+  {
+    name: 'Pro',
+    price: 99,
+    planKey: 'pro',
+    popular: true,
+    desc: 'For teams serious about forum lead generation',
+    features: [
+      '500 scans per day',
+      '500 AI reply generations per month',
+      'Everything in Starter',
+      'Higher daily scan volume',
+      'Priority support',
+      'Early access to new features',
+      'Advanced keyword suggestions',
+      'Unlimited keyword slots',
+    ],
+  },
 ];
 
 export default function PricingPage() {

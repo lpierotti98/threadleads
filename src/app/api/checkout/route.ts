@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getStripe } from '@/lib/stripe';
 
 const VALID_PLANS = ['starter', 'pro'] as const;
-const PRICES: Record<string, number> = { starter: 19900, pro: 39900 };
+const PRICES: Record<string, number> = { starter: 4900, pro: 9900 };
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
               name: `ThreadLeads ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
               description:
                 plan === 'starter'
-                  ? '50 scans/day, 50 replies/month'
-                  : '500 scans/day, 500 replies/month',
+                  ? '$49/mo — 50 scans/day, 50 replies/month'
+                  : '$99/mo — 500 scans/day, 500 replies/month',
             },
             unit_amount: priceAmount,
             recurring: { interval: 'month' },

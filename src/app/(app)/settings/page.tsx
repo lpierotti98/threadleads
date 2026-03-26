@@ -162,7 +162,7 @@ export default function SettingsPage() {
                   <span className="text-sm font-semibold capitalize" style={{ color: 'var(--text)' }}>{plan} Plan</span>
                   <span className="font-mono text-[9px] font-bold uppercase tracking-widest px-2 py-0.5" style={{ background: 'var(--green)', color: '#0e0e0f' }}>Active</span>
                 </div>
-                <p className="font-mono text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{plan === 'starter' ? '$199/month' : '$399/month'}</p>
+                <p className="font-mono text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{plan === 'starter' ? '$49/month' : '$99/month'}</p>
               </div>
               <Link href="/pricing" className="font-mono text-xs underline underline-offset-2" style={{ color: 'var(--accent)' }}>manage</Link>
             </div>
