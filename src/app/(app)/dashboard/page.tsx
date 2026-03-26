@@ -9,9 +9,13 @@ import ThreadCard from '@/components/ThreadCard';
 import ReplyModal from '@/components/ReplyModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
+import UsageBar from '@/components/UsageBar';
 import { useToast } from '@/components/Toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+
+const SCAN_LIMITS: Record<string, number> = { starter: 1, pro: 3 };
+const REPLY_LIMITS: Record<string, number> = { starter: 50, pro: 200 };
 
 export default function DashboardPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -27,6 +31,8 @@ export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState('');
   const [hasKeywords, setHasKeywords] = useState(false);
   const [hasProductMention, setHasProductMention] = useState(false);
+  const [scanLimitBanner, setScanLimitBanner] = useState<string | null>(null);
+  const [usage, setUsage] = useState({ scans_today: 0, replies_this_month: 0 });
   const { toast } = useToast();
 
   const supabase = createClient();
@@ -47,8 +53,24 @@ export default function DashboardPage() {
     setLoading(false);
   }, [supabase]);
 
+  const fetchUsage = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: u } = await supabase.from('usage').select('scans_today, replies_this_month, last_scan_at').eq('user_id', user.id).maybeSingle();
+    if (u) {
+      // Reset daily if different day
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = u.last_scan_at ? new Date(u.last_scan_at).toISOString().split('T')[0] : null;
+      setUsage({
+        scans_today: lastDate === today ? u.scans_today : 0,
+        replies_this_month: u.replies_this_month,
+      });
+    }
+  }, [supabase]);
+
   useEffect(() => {
     fetchThreads();
+    fetchUsage();
 
     async function loadState() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -63,10 +85,11 @@ export default function DashboardPage() {
       setHasProductMention(!!settings?.product_mention);
     }
     loadState();
-  }, [fetchThreads, supabase]);
+  }, [fetchThreads, fetchUsage, supabase]);
 
   async function handleScan() {
     setScanning(true);
+    setScanLimitBanner(null);
     try {
       const res = await fetch('/api/scan', {
         method: 'POST',
@@ -74,8 +97,17 @@ export default function DashboardPage() {
         body: JSON.stringify({ days: scanDays }),
       });
       const data = await res.json();
-      await fetchThreads();
-      toast(`Scan complete — ${data.saved || 0} threads saved`, 'success');
+
+      if (data.error === 'SCAN_LIMIT_REACHED') {
+        setScanLimitBanner(data.message);
+        toast(data.message, 'error');
+      } else if (data.error) {
+        toast(data.error, 'error');
+      } else {
+        await fetchThreads();
+        toast(`Scan complete — ${data.saved || 0} threads saved`, 'success');
+      }
+      await fetchUsage();
     } catch {
       toast('Scan failed', 'error');
     } finally {
@@ -110,6 +142,8 @@ export default function DashboardPage() {
 
   const hasScanned = threads.length > 0;
   const hasReplied = threads.some((t) => t.reply_generated);
+  const scansLimit = planName ? (SCAN_LIMITS[planName] || 0) : 0;
+  const repliesLimit = planName ? (REPLY_LIMITS[planName] || 0) : 0;
 
   return (
     <div className="space-y-6">
@@ -156,6 +190,37 @@ export default function DashboardPage() {
 
       {hasSubscription === false && <UpgradePrompt />}
 
+      {/* Usage bars */}
+      <UsageBar
+        scansUsed={usage.scans_today}
+        scansLimit={scansLimit}
+        repliesUsed={usage.replies_this_month}
+        repliesLimit={repliesLimit}
+        plan={planName}
+      />
+
+      {/* Scan limit banner */}
+      {scanLimitBanner && (
+        <div
+          className="flex items-center justify-between p-4 border-l-2 animate-fade-slide-in"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', borderLeftColor: 'var(--amber)' }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{scanLimitBanner}</p>
+            <p className="font-mono text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Upgrade for more daily scans.
+            </p>
+          </div>
+          <Link
+            href="/pricing"
+            className="font-mono text-xs font-bold uppercase tracking-wider px-4 py-2 flex-shrink-0 transition-colors"
+            style={{ background: 'var(--accent)', color: 'white' }}
+          >
+            upgrade to pro
+          </Link>
+        </div>
+      )}
+
       <OnboardingChecklist
         hasKeywords={hasKeywords}
         hasScanned={hasScanned}
@@ -169,7 +234,6 @@ export default function DashboardPage() {
       <div className="space-y-px" style={{ background: 'var(--border)' }}>
         {filtered.length === 0 ? (
           <div className="py-20 px-6 text-center animate-fade-slide-in" style={{ background: 'var(--surface)' }}>
-            {/* SVG illustration */}
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
               <rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-secondary)' }} />
               <path d="M8 20h48M24 30h16M20 38h24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-secondary)' }} />
@@ -213,7 +277,7 @@ export default function DashboardPage() {
       {selectedThread && (
         <ReplyModal
           thread={selectedThread}
-          onClose={() => { setSelectedThread(null); fetchThreads(); }}
+          onClose={() => { setSelectedThread(null); fetchThreads(); fetchUsage(); }}
         />
       )}
     </div>

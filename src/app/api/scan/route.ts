@@ -6,6 +6,7 @@ import {
   checkScanLimit,
   checkRateLimit,
   truncateForClaude,
+  SCAN_LIMITS,
 } from '@/lib/auth-guard';
 
 function redditTimeFilter(days: number): string {
@@ -28,7 +29,20 @@ export async function POST(request: NextRequest) {
     // 2. Check scan limit BEFORE starting (never interrupt mid-scan)
     const scanLimit = checkScanLimit(auth);
     if (!scanLimit.allowed) {
-      return NextResponse.json({ error: scanLimit.reason }, { status: 429 });
+      const limit = auth.plan ? SCAN_LIMITS[auth.plan] : 0;
+      const tomorrow = new Date();
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
+      return NextResponse.json({
+        error: 'SCAN_LIMIT_REACHED',
+        message: auth.plan
+          ? `You have used your ${limit === 1 ? '1 daily scan' : `${limit} daily scans`} (${auth.plan.charAt(0).toUpperCase() + auth.plan.slice(1)} plan). Resets at midnight UTC.`
+          : 'Active subscription required to scan.',
+        scansUsed: auth.usage.scans_today,
+        scansLimit: limit,
+        resetsAt: tomorrow.toISOString(),
+        upgradeTo: auth.plan === 'starter' ? 'pro' : null,
+      }, { status: 429 });
     }
 
     // 3. Rate limit

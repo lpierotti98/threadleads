@@ -7,6 +7,7 @@ import {
   checkRateLimit,
   validateString,
   truncateForClaude,
+  REPLY_LIMITS,
 } from '@/lib/auth-guard';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +20,16 @@ export async function POST(request: NextRequest) {
     // 2. Check reply limit BEFORE calling Claude
     const replyLimit = checkReplyLimit(auth);
     if (!replyLimit.allowed) {
-      return NextResponse.json({ error: replyLimit.reason }, { status: 429 });
+      const limit = auth.plan ? REPLY_LIMITS[auth.plan] : 0;
+      return NextResponse.json({
+        error: 'REPLY_LIMIT_REACHED',
+        message: auth.plan
+          ? `You have used all ${limit} monthly replies (${auth.plan.charAt(0).toUpperCase() + auth.plan.slice(1)} plan). Resets on the 1st of next month.`
+          : 'Active subscription required to generate replies.',
+        repliesUsed: auth.usage.replies_this_month,
+        repliesLimit: limit,
+        upgradeTo: auth.plan === 'starter' ? 'pro' : null,
+      }, { status: 429 });
     }
 
     // 3. Rate limit

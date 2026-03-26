@@ -91,9 +91,9 @@ export async function authenticateAndAuthorize(): Promise<
   };
 }
 
-const SCAN_LIMITS: Record<string, number> = { starter: 1, pro: 3 };
-const REPLY_LIMITS: Record<string, number> = { starter: 50, pro: 200 };
-const KEYWORD_LIMITS: Record<string, number> = { starter: 5, pro: 10 };
+export const SCAN_LIMITS: Record<string, number> = { starter: 1, pro: 3 };
+export const REPLY_LIMITS: Record<string, number> = { starter: 50, pro: 200 };
+export const KEYWORD_LIMITS: Record<string, number> = { starter: 5, pro: 10 };
 
 export function checkScanLimit(auth: AuthResult): LimitResult {
   if (!auth.plan) {

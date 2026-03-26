@@ -6,7 +6,7 @@ import { Trash2, Loader2 } from 'lucide-react';
 import type { Keyword } from '@/lib/types';
 import { useToast } from '@/components/Toast';
 
-const MAX_KEYWORDS = 10;
+const KEYWORD_LIMITS: Record<string, number> = { starter: 5, pro: 10 };
 
 export default function KeywordsPage() {
   const { toast } = useToast();
@@ -17,6 +17,7 @@ export default function KeywordsPage() {
   const [description, setDescription] = useState('');
   const [generating, setGenerating] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [plan, setPlan] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -29,6 +30,15 @@ export default function KeywordsPage() {
         .eq('user_id', user.id)
         .maybeSingle();
       if (data?.keywords) setKeywords(data.keywords);
+
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('plan')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      setPlan(sub?.plan || null);
+
       setLoading(false);
     }
     load();
@@ -43,9 +53,12 @@ export default function KeywordsPage() {
     toast('Keywords saved', 'success');
   }
 
+  const maxKeywords = plan ? (KEYWORD_LIMITS[plan] || 5) : 5;
+  const atLimit = keywords.length >= maxKeywords;
+
   function addKeyword(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || keywords.length >= MAX_KEYWORDS) return;
+    if (!trimmed || atLimit) return;
     if (keywords.some((k) => k.text.toLowerCase() === trimmed.toLowerCase())) return;
     const updated = [...keywords, { text: trimmed, active: true }];
     setKeywords(updated);
@@ -78,7 +91,11 @@ export default function KeywordsPage() {
         body: JSON.stringify({ description: description.trim() }),
       });
       const data = await res.json();
-      if (Array.isArray(data.keywords)) setSuggestions(data.keywords);
+      if (data.error) {
+        toast(data.error, 'error');
+      } else if (Array.isArray(data.keywords)) {
+        setSuggestions(data.keywords);
+      }
     } catch { /* retry manually */ } finally { setGenerating(false); }
   }
 
@@ -97,7 +114,7 @@ export default function KeywordsPage() {
           Keywords
         </p>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Up to {MAX_KEYWORDS} topics to monitor on Reddit and Hacker News
+          {keywords.length} / {maxKeywords} keywords used{plan ? ` (${plan.charAt(0).toUpperCase() + plan.slice(1)})` : ''}
         </p>
       </div>
 
@@ -129,7 +146,7 @@ export default function KeywordsPage() {
         {suggestions.length > 0 && (
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Click to add ({keywords.length}/{MAX_KEYWORDS})
+              Click to add ({keywords.length}/{maxKeywords})
             </p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((s) => {
@@ -138,7 +155,7 @@ export default function KeywordsPage() {
                   <button
                     key={s}
                     onClick={() => addKeyword(s)}
-                    disabled={added || keywords.length >= MAX_KEYWORDS}
+                    disabled={added || keywords.length >= maxKeywords}
                     className="font-mono text-[11px] px-3 py-1.5 border disabled:opacity-30 transition-colors"
                     style={{
                       background: added ? 'var(--surface-el)' : 'transparent',
@@ -173,7 +190,7 @@ export default function KeywordsPage() {
           />
           <button
             onClick={handleAdd}
-            disabled={!newKeyword.trim() || keywords.length >= MAX_KEYWORDS}
+            disabled={!newKeyword.trim() || keywords.length >= maxKeywords}
             className="font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 disabled:opacity-30"
             style={{ background: 'var(--accent)', color: '#0e0e0f' }}
           >
@@ -231,8 +248,18 @@ export default function KeywordsPage() {
           </div>
         )}
         <p className="font-mono text-[10px] mt-3" style={{ color: 'var(--text-secondary)' }}>
-          {keywords.length}/{MAX_KEYWORDS} keywords{saving ? ' — saving...' : ''}
+          {keywords.length}/{maxKeywords} keywords{saving ? ' — saving...' : ''}
         </p>
+        {atLimit && (
+          <div className="mt-3 p-3 border-l-2 animate-fade-slide-in" style={{ background: 'var(--surface-el)', borderLeftColor: 'var(--amber)' }}>
+            <p className="text-xs" style={{ color: 'var(--text)' }}>
+              Keyword limit reached for your plan.
+              {plan === 'starter' && (
+                <> <a href="/pricing" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>Upgrade to Pro</a> for up to 10 keywords.</>
+              )}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

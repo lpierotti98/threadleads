@@ -17,6 +17,7 @@ export default function ReplyModal({ thread, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [mentionProduct, setMentionProduct] = useState(false);
+  const [limitHit, setLimitHit] = useState<{ message: string; upgradeTo: string | null } | null>(null);
   const [productMentionText, setProductMentionText] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -45,7 +46,9 @@ export default function ReplyModal({ thread, onClose }: Props) {
         }),
       });
       const data = await res.json();
-      if (data.reply) {
+      if (data.error === 'REPLY_LIMIT_REACHED') {
+        setLimitHit({ message: data.message, upgradeTo: data.upgradeTo });
+      } else if (data.reply) {
         setReply(data.reply);
         setGenerated(true);
         toast('Reply generated', 'success');
@@ -92,7 +95,22 @@ export default function ReplyModal({ thread, onClose }: Props) {
             )}
           </div>
 
-          {!generated && (
+          {limitHit && (
+            <div className="p-4 border-l-2 animate-fade-slide-in" style={{ background: 'var(--surface-el)', borderLeftColor: 'var(--amber)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{limitHit.message}</p>
+              {limitHit.upgradeTo && (
+                <a
+                  href="/pricing"
+                  className="inline-block mt-3 font-mono text-xs font-bold uppercase tracking-wider px-4 py-2 transition-colors"
+                  style={{ background: 'var(--accent)', color: 'white' }}
+                >
+                  upgrade to {limitHit.upgradeTo}
+                </a>
+              )}
+            </div>
+          )}
+
+          {!generated && !limitHit && (
             <div className="space-y-3">
               {productMentionText && (
                 <label className="flex items-center gap-2 cursor-pointer">
