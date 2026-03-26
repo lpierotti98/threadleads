@@ -1,9 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { scoreThread } from '@/lib/claude';
 
-export async function POST() {
+function redditTimeFilter(days: number): string {
+  if (days <= 1) return 'day';
+  if (days <= 7) return 'week';
+  if (days <= 30) return 'month';
+  return 'year';
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const days = typeof body.days === 'number' && body.days > 0 ? body.days : 7;
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -41,7 +51,7 @@ export async function POST() {
       // Search Reddit
       try {
         const redditRes = await fetch(
-          `https://www.reddit.com/search.json?q=${query}&sort=new&t=week&limit=25`,
+          `https://www.reddit.com/search.json?q=${query}&sort=relevance&t=${redditTimeFilter(days)}&limit=25`,
           {
             headers: {
               'User-Agent': 'ThreadLeads/1.0',
@@ -109,10 +119,10 @@ export async function POST() {
       }
 
       // Search Hacker News
-      const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+      const cutoff = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60;
       try {
         const hnRes = await fetch(
-          `https://hn.algolia.com/api/v1/search?query=${query}&tags=ask_hn,show_hn&numericFilters=created_at_i>${sevenDaysAgo}&hitsPerPage=25`
+          `https://hn.algolia.com/api/v1/search?query=${query}&tags=ask_hn,show_hn&numericFilters=created_at_i>${cutoff}&hitsPerPage=25`
         );
         if (hnRes.ok) {
           const hnData = await hnRes.json();

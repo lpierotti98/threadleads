@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
   const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
   const [planName, setPlanName] = useState<string | null>(null);
+  const [scanDays, setScanDays] = useState(7);
 
   const supabase = createClient();
 
@@ -64,7 +65,11 @@ export default function DashboardPage() {
   async function handleScan() {
     setScanning(true);
     try {
-      await fetch('/api/scan', { method: 'POST' });
+      await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: scanDays }),
+      });
       await fetchThreads();
     } finally {
       setScanning(false);
@@ -129,18 +134,30 @@ export default function DashboardPage() {
             Threads with buying intent from Reddit and Hacker News
           </p>
         </div>
-        <button
-          onClick={handleScan}
-          disabled={scanning || hasSubscription === false}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-        >
-          {scanning ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <RefreshCw size={16} />
-          )}
-          {scanning ? 'Scanning...' : 'Scan Now'}
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={scanDays}
+            onChange={(e) => setScanDays(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+          >
+            <option value={1}>Last 24h</option>
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 3 months</option>
+          </select>
+          <button
+            onClick={handleScan}
+            disabled={scanning || hasSubscription === false}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          >
+            {scanning ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <RefreshCw size={16} />
+            )}
+            {scanning ? 'Scanning...' : 'Scan Now'}
+          </button>
+        </div>
       </div>
 
       {hasSubscription === false && <UpgradePrompt />}
