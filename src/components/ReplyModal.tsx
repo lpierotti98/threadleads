@@ -139,10 +139,28 @@ export default function ReplyModal({ thread, onClose }: Props) {
 
           {generated && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-gray-500 uppercase">
-                  Generated Reply
-                </p>
+              <p className="text-xs font-medium text-gray-500 uppercase">
+                Generated Reply
+              </p>
+              <textarea
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                rows={8}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(reply);
+                  window.open(thread.url, '_blank');
+                }}
+                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors"
+              >
+                Copy reply &amp; open thread &rarr;
+              </button>
+              <p className="text-xs text-gray-400 text-center">
+                Paste with Ctrl+V directly in the thread
+              </p>
+              <div className="flex justify-end">
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
@@ -155,17 +173,11 @@ export default function ReplyModal({ thread, onClose }: Props) {
                   ) : (
                     <>
                       <Copy size={14} />
-                      Copy to clipboard
+                      Copy to clipboard only
                     </>
                   )}
                 </button>
               </div>
-              <textarea
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                rows={8}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
               <p className="text-xs text-gray-400">
                 Edit the reply above before copying. Make it your own.
               </p>

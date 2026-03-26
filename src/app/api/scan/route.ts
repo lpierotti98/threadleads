@@ -41,7 +41,7 @@ export async function POST() {
       // Search Reddit
       try {
         const redditRes = await fetch(
-          `https://www.reddit.com/search.json?q=${query}&sort=new&limit=25`,
+          `https://www.reddit.com/search.json?q=${query}&sort=new&t=week&limit=25`,
           {
             headers: {
               'User-Agent': 'ThreadLeads/1.0',
@@ -109,9 +109,10 @@ export async function POST() {
       }
 
       // Search Hacker News
+      const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
       try {
         const hnRes = await fetch(
-          `https://hn.algolia.com/api/v1/search?query=${query}&tags=(ask_hn,show_hn)&hitsPerPage=25`
+          `https://hn.algolia.com/api/v1/search?query=${query}&tags=ask_hn,show_hn&numericFilters=created_at_i>${sevenDaysAgo}&hitsPerPage=25`
         );
         if (hnRes.ok) {
           const hnData = await hnRes.json();
