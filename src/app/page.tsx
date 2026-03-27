@@ -85,9 +85,9 @@ export default function LandingPage() {
           from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes scrollBounce {
+        @keyframes bounce {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(6px); }
+          50% { transform: translateY(8px); }
         }
         @keyframes float {
           0%, 100% { transform: translateY(0); }
@@ -199,29 +199,35 @@ export default function LandingPage() {
             <p className="animate-up delay-4" style={{ fontSize: 13, color: TEXT2, marginTop: 24 }}>
               Join founders already using ThreadLeads to turn forum conversations into pipeline.
             </p>
-          </div>
 
-          {/* Scroll arrow */}
-          {scrollY < 100 && (
-            <a
-              href="#features"
-              onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}
+            {/* Scroll arrow */}
+            <div
               style={{
-                position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
-                opacity: 0, animation: 'fadeUp 0.5s ease-out 1.5s forwards',
-                cursor: 'pointer', transition: 'opacity 0.3s',
+                marginTop: 40,
+                display: 'flex',
+                justifyContent: 'center',
+                opacity: scrollY > 100 ? 0 : undefined,
+                pointerEvents: scrollY > 100 ? 'none' : 'auto',
+                transition: 'opacity 0.4s ease',
+                animation: 'fadeUp 0.5s ease-out 1.5s both',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.4'; }}
             >
-              <svg
-                width="24" height="24" viewBox="0 0 24 24" fill="none"
-                style={{ animation: 'scrollBounce 2s ease-in-out infinite', opacity: 0.4 }}
+              <a
+                href="#features"
+                onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}
+                style={{ cursor: 'pointer', opacity: 0.35, transition: 'opacity 0.2s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.65'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.35'; }}
               >
-                <path d="M6 9l6 6 6-6" stroke={TEXT2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </a>
-          )}
+                <svg
+                  width="28" height="28" viewBox="0 0 24 24" fill="none"
+                  style={{ animation: 'bounce 2s ease-in-out infinite' }}
+                >
+                  <path d="M6 9l6 6 6-6" stroke={ACCENT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+            </div>
+          </div>
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}
