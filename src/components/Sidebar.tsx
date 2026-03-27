@@ -9,6 +9,7 @@ import {
   Settings,
   Code2,
   LifeBuoy,
+  ShieldCheck,
   LogOut,
   Menu,
   X,
@@ -16,6 +17,7 @@ import {
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { isAdmin } from '@/lib/admin';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,12 +33,16 @@ export default function Sidebar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     async function getEmail() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setEmail(user.email || '');
+      if (user) {
+        setEmail(user.email || '');
+        setShowAdmin(isAdmin(user.email || ''));
+      }
     }
     getEmail();
   }, []);
@@ -94,6 +100,17 @@ export default function Sidebar() {
 
       <div className="px-6 pb-4 space-y-3">
         <div className="h-px" style={{ background: 'var(--border)' }} />
+        {showAdmin && (
+          <Link
+            href="/admin"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-2 font-mono text-[12px] transition-colors hover:opacity-80"
+            style={{ color: 'var(--red)' }}
+          >
+            <ShieldCheck size={13} />
+            Admin
+          </Link>
+        )}
         {email && (
           <p className="font-mono text-[10px] truncate" style={{ color: 'var(--text-secondary)' }}>
             {email}
