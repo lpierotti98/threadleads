@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -35,29 +37,93 @@ export default function LoginPage() {
           <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Turn conversations into pipeline</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="text-sm p-3 border font-mono text-xs" style={{ background: 'var(--surface)', borderColor: 'var(--red)', color: 'var(--red)' }}>
-              {error}
+        {forgotMode ? (
+          resetSent ? (
+            <div className="text-center">
+              <div className="p-4 border rounded-sm mb-6" style={{ background: 'var(--surface)', borderColor: 'var(--accent)' }}>
+                <p className="text-sm" style={{ color: 'var(--text)' }}>Check your email for a reset link</p>
+              </div>
+              <button
+                onClick={() => { setForgotMode(false); setResetSent(false); setError(''); }}
+                className="font-mono text-xs underline underline-offset-2"
+                style={{ color: 'var(--accent)' }}
+              >
+                Back to login
+              </button>
             </div>
-          )}
-          <div>
-            <label className="block font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full border px-4 py-3 text-sm rounded-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} placeholder="you@example.com" />
-          </div>
-          <div>
-            <label className="block font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full border px-4 py-3 text-sm rounded-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} placeholder="Enter your password" />
-          </div>
-          <button type="submit" disabled={loading} className="w-full py-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-colors" style={{ background: 'var(--accent)', color: 'white' }}>
-            {loading ? 'signing in...' : 'sign in'}
-          </button>
-        </form>
+          ) : (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setError('');
+              setLoading(true);
+              const supabase = createClient();
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: 'https://threadleads.app/auth/reset-password',
+              });
+              if (error) { setError(error.message); setLoading(false); }
+              else { setResetSent(true); setLoading(false); }
+            }} className="space-y-4">
+              {error && (
+                <div className="text-sm p-3 border font-mono text-xs" style={{ background: 'var(--surface)', borderColor: 'var(--red)', color: 'var(--red)' }}>
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="block font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full border px-4 py-3 text-sm rounded-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} placeholder="you@example.com" />
+              </div>
+              <button type="submit" disabled={loading} className="w-full py-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-colors" style={{ background: 'var(--accent)', color: 'white' }}>
+                {loading ? 'sending...' : 'send reset link'}
+              </button>
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(false); setError(''); }}
+                  className="font-mono text-xs underline underline-offset-2"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Back to login
+                </button>
+              </p>
+            </form>
+          )
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="text-sm p-3 border font-mono text-xs" style={{ background: 'var(--surface)', borderColor: 'var(--red)', color: 'var(--red)' }}>
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="block font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full border px-4 py-3 text-sm rounded-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} placeholder="you@example.com" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMode(true); setError(''); }}
+                    className="font-mono text-[10px] underline underline-offset-2"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full border px-4 py-3 text-sm rounded-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} placeholder="Enter your password" />
+              </div>
+              <button type="submit" disabled={loading} className="w-full py-3 font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-colors" style={{ background: 'var(--accent)', color: 'white' }}>
+                {loading ? 'signing in...' : 'sign in'}
+              </button>
+            </form>
 
-        <p className="text-center text-sm mt-8" style={{ color: 'var(--text-secondary)' }}>
-          No account?{' '}
-          <Link href="/signup" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>Sign up</Link>
-        </p>
+            <p className="text-center text-sm mt-8" style={{ color: 'var(--text-secondary)' }}>
+              No account?{' '}
+              <Link href="/signup" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>Sign up</Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
