@@ -1,0 +1,105 @@
+'use client';
+
+import Link from 'next/link';
+
+const S = { h2: { fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, fontWeight: 700 as const, color: 'var(--text)', marginTop: 48, marginBottom: 12 }, p: { fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 16 }, ul: { paddingLeft: 20, marginBottom: 16 }, li: { fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 6 } };
+
+export default function TermsPage() {
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <div style={{ borderBottom: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <span style={{ width: 28, height: 28, background: 'var(--accent)', borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace" }}>TL</span>
+            <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>ThreadLeads</span>
+          </Link>
+          <Link href="/privacy" className="font-mono text-xs" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Privacy Policy</Link>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '60px 24px 80px' }}>
+        <p className="font-mono" style={{ fontSize: 11, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Legal</p>
+        <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 36, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Terms of Service</h1>
+        <p className="font-mono" style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 48 }}>Last updated: March 2026</p>
+
+        <h2 style={S.h2}>1. Acceptance of Terms</h2>
+        <p style={S.p}>
+          By creating an account or using ThreadLeads, you agree to these Terms of Service. If you do not agree, do not use the service. We may update these terms from time to time; continued use after changes constitutes acceptance.
+        </p>
+
+        <h2 style={S.h2}>2. Description of Service</h2>
+        <p style={S.p}>
+          ThreadLeads is a software-as-a-service platform that monitors public forum threads on Reddit and Hacker News, scores them for buying intent using AI, and generates expert reply suggestions. The service includes a web dashboard, API access, and AI-powered keyword generation.
+        </p>
+
+        <h2 style={S.h2}>3. Subscription and Billing</h2>
+        <ul style={S.ul}>
+          <li style={S.li}>ThreadLeads offers paid subscription plans billed monthly via Stripe.</li>
+          <li style={S.li}><strong style={{ color: 'var(--text)' }}>Starter plan ($49/month):</strong> 1 scan per day, 5 keywords, 50 AI replies per month.</li>
+          <li style={S.li}><strong style={{ color: 'var(--text)' }}>Pro plan ($99/month):</strong> 3 scans per day, 10 keywords, 200 AI replies per month.</li>
+          <li style={S.li}>You may cancel your subscription at any time. Cancellation takes effect at the end of the current billing period.</li>
+          <li style={S.li}>No refunds are provided for partial months. If you believe a charge was made in error, contact us.</li>
+          <li style={S.li}>We reserve the right to change pricing with 30 days&apos; notice via email.</li>
+        </ul>
+
+        <h2 style={S.h2}>4. Usage Limits</h2>
+        <p style={S.p}>
+          Each plan has defined limits on daily scans, keywords, and monthly reply generations. These limits reset daily (scans) or monthly (replies) at midnight UTC and the 1st of each month respectively. Exceeding limits will result in temporary restriction of the relevant feature until the limit resets.
+        </p>
+
+        <h2 style={S.h2}>5. Acceptable Use</h2>
+        <p style={S.p}>You agree not to:</p>
+        <ul style={S.ul}>
+          <li style={S.li}>Use AI-generated replies to spam forums, post misleading content, or violate any platform&apos;s terms of service.</li>
+          <li style={S.li}>Create multiple accounts to circumvent usage limits.</li>
+          <li style={S.li}>Use the service to harass, deceive, or manipulate other users on any platform.</li>
+          <li style={S.li}>Attempt to reverse-engineer, scrape, or interfere with the ThreadLeads platform.</li>
+          <li style={S.li}>Share API keys or allow unauthorized access to your account.</li>
+          <li style={S.li}>Use the service for any illegal purpose.</li>
+        </ul>
+        <p style={S.p}>
+          You are solely responsible for any content you post on third-party platforms using replies generated by ThreadLeads. We strongly recommend reviewing and personalizing all AI-generated content before posting.
+        </p>
+
+        <h2 style={S.h2}>6. Intellectual Property</h2>
+        <p style={S.p}>
+          The ThreadLeads platform, including its code, design, and documentation, is owned by ThreadLeads. AI-generated replies produced for you are yours to use freely. You retain ownership of your keywords, settings, and any content you provide.
+        </p>
+
+        <h2 style={S.h2}>7. Disclaimer of Warranties</h2>
+        <p style={S.p}>
+          ThreadLeads is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, express or implied. We do not guarantee that forum scanning will find all relevant threads, that AI scores will be perfectly accurate, or that generated replies will achieve any specific outcome. AI-generated content may occasionally be inaccurate or inappropriate.
+        </p>
+
+        <h2 style={S.h2}>8. Limitation of Liability</h2>
+        <p style={S.p}>
+          To the maximum extent permitted by law, ThreadLeads shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the service. Our total liability shall not exceed the amount you paid us in the 12 months preceding the claim.
+        </p>
+        <p style={S.p}>
+          We are not responsible for any consequences arising from content you post on third-party platforms, including account suspensions, bans, or reputation damage.
+        </p>
+
+        <h2 style={S.h2}>9. Termination</h2>
+        <p style={S.p}>
+          You may close your account at any time by contacting us. We may suspend or terminate your account if you violate these terms, with or without notice. Upon termination, your data will be deleted in accordance with our Privacy Policy.
+        </p>
+
+        <h2 style={S.h2}>10. Governing Law</h2>
+        <p style={S.p}>
+          These terms are governed by the laws applicable in the jurisdiction where ThreadLeads operates. Any disputes will be resolved through good-faith negotiation first, and if necessary, through binding arbitration.
+        </p>
+
+        <h2 style={S.h2}>11. Contact</h2>
+        <p style={S.p}>
+          For questions about these terms, contact us at{' '}
+          <a href="mailto:pm.marine@admasol.com" style={{ color: 'var(--accent)', textDecoration: 'underline', textUnderlineOffset: 3 }}>pm.marine@admasol.com</a>.
+        </p>
+
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-secondary)' }}>
+          <span>&copy; {new Date().getFullYear()} ThreadLeads</span>
+          <Link href="/privacy" style={{ color: 'var(--accent)', textDecoration: 'none' }}>&larr; Privacy Policy</Link>
+        </div>
+      </div>
+    </div>
+  );
+}

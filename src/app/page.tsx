@@ -455,11 +455,14 @@ export default function LandingPage() {
               ThreadLeads
             </Link>
             <p style={{ fontSize: 13, color: TEXT2 }}>Turn forum conversations into inbound leads</p>
-            <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
+            <div style={{ display: 'flex', gap: 24, fontSize: 13, flexWrap: 'wrap', justifyContent: 'center' }}>
               <Link href="/dashboard" style={{ color: TEXT2, textDecoration: 'none' }}>Dashboard</Link>
               <Link href="/pricing" style={{ color: TEXT2, textDecoration: 'none' }}>Pricing</Link>
+              <Link href="/support" style={{ color: TEXT2, textDecoration: 'none' }}>Support</Link>
+              <Link href="/api-docs" style={{ color: TEXT2, textDecoration: 'none' }}>API</Link>
+              <Link href="/privacy" style={{ color: TEXT2, textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: TEXT2, textDecoration: 'none' }}>Terms</Link>
               <Link href="/login" style={{ color: TEXT2, textDecoration: 'none' }}>Sign in</Link>
-              <Link href="/signup" style={{ color: TEXT2, textDecoration: 'none' }}>Sign up</Link>
             </div>
             <p style={{ fontSize: 12, color: TEXT2 }}>&copy; {new Date().getFullYear()} ThreadLeads. All rights reserved.</p>
           </div>
