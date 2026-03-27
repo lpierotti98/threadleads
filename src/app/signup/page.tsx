@@ -45,7 +45,7 @@ export default function SignupPage() {
             </div>
           </div>
           <h1 className="font-serif text-3xl" style={{ color: 'var(--text)' }}>ThreadLeads</h1>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Create your account</p>
+          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Plans from $49/month. Cancel anytime.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

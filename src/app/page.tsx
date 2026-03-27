@@ -151,7 +151,7 @@ export default function LandingPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <Link href="/login" style={{ fontSize: 14, color: TEXT2, textDecoration: 'none' }}>Sign in</Link>
-                <Link href="/signup" className="btn-scale" style={{ fontSize: 14, fontWeight: 600, color: '#fff', background: ACCENT, padding: '8px 18px', borderRadius: 8, textDecoration: 'none' }}>Start free</Link>
+                <Link href="/signup" className="btn-scale" style={{ fontSize: 14, fontWeight: 600, color: '#fff', background: ACCENT, padding: '8px 18px', borderRadius: 8, textDecoration: 'none' }}>Get started</Link>
               </div>
             </div>
           </div>
