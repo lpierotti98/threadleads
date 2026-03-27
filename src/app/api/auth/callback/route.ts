@@ -1,51 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { sendWelcomeEmail } from '@/lib/emails';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const { searchParams } = new URL(request.url);
+  const token_hash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
+  const next = searchParams.get('next') || '/dashboard';
 
-  if (code) {
-    const response = NextResponse.redirect(`${origin}${next}`);
-
+  if (token_hash && type) {
+    const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
+          getAll() { return cookieStore.getAll(); },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value);
-              response.cookies.set(name, value, options);
-            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
           },
         },
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: type as any,
+      token_hash,
+    });
 
-    if (!error) {
-      // Send welcome email after successful confirmation
+    if (!error && data.user) {
+      // Send welcome email
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          const name = user.user_metadata?.name || user.email.split('@')[0];
-          await sendWelcomeEmail(user.email, name);
-        }
-      } catch (emailErr) {
-        console.error('[auth/callback] Welcome email error:', emailErr);
+        await sendWelcomeEmail(
+          data.user.email!,
+          data.user.email!.split('@')[0]
+        );
+      } catch (e) {
+        console.error('Welcome email failed:', e);
       }
-
-      return response;
+      return NextResponse.redirect(new URL(next, request.url));
     }
   }
 
-  // Auth error — redirect to login
-  return NextResponse.redirect(`${request.nextUrl.origin}/login`);
+  return NextResponse.redirect(new URL('/login?error=confirmation_failed', request.url));
 }
