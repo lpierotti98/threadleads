@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 export type Theme = 'light' | 'dark' | 'system';
 
 function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'dark';
+  if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -15,11 +15,11 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>('light');
 
   useEffect(() => {
     const stored = localStorage.getItem('theme') as Theme | null;
-    const t = stored || 'system';
+    const t = stored || 'light';
     setThemeState(t);
     applyTheme(t);
 

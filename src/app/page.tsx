@@ -85,6 +85,10 @@ export default function LandingPage() {
           from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes scrollBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(6px); }
+        }
         @keyframes float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
@@ -196,6 +200,28 @@ export default function LandingPage() {
               Join founders already using ThreadLeads to turn forum conversations into pipeline.
             </p>
           </div>
+
+          {/* Scroll arrow */}
+          {scrollY < 100 && (
+            <a
+              href="#features"
+              onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}
+              style={{
+                position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+                opacity: 0, animation: 'fadeUp 0.5s ease-out 1.5s forwards',
+                cursor: 'pointer', transition: 'opacity 0.3s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.4'; }}
+            >
+              <svg
+                width="24" height="24" viewBox="0 0 24 24" fill="none"
+                style={{ animation: 'scrollBounce 2s ease-in-out infinite', opacity: 0.4 }}
+              >
+                <path d="M6 9l6 6 6-6" stroke={TEXT2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          )}
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}

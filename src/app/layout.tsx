@@ -23,8 +23,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                var t = localStorage.getItem('theme') || 'system';
-                var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var t = localStorage.getItem('theme') || 'light';
+                var dark = t === 'dark';
                 if (dark) document.documentElement.classList.add('dark');
               })();
             `,

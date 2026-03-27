@@ -30,29 +30,31 @@ export default function AdminApiKeysPage() {
   }
 
   return (
-    <div>
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--text-secondary)' }}>Admin</p>
-      <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>API Keys</h1>
+    <div className="space-y-6">
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--text-secondary)' }}>Admin</p>
+        <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>API Keys</h1>
+      </div>
 
-      <div style={{ border: '1px solid var(--border)', overflow: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div className="border overflow-auto" style={{ borderColor: 'var(--border)', borderRadius: 4 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-el)' }}>
+            <tr style={{ background: 'var(--surface-el)' }}>
               {['User ID', 'Name', 'Last Used', 'Created', ''].map((h) => (
-                <th key={h} className="font-mono" style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', fontWeight: 600 }}>{h}</th>
+                <th key={h} className="font-mono" style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {keys.map((k) => (
-              <tr key={k.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td className="font-mono" style={{ padding: '10px 14px', color: 'var(--text-secondary)', fontSize: 11 }}>{k.user_id.substring(0, 8)}...</td>
-                <td className="font-mono" style={{ padding: '10px 14px', color: 'var(--text)', fontSize: 12 }}>{k.name}</td>
-                <td className="font-mono" style={{ padding: '10px 14px', color: 'var(--text-secondary)', fontSize: 11 }}>
+            {keys.map((k, i) => (
+              <tr key={k.id} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
+                <td className="font-mono text-[11px]" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{k.user_id.substring(0, 12)}...</td>
+                <td className="font-mono text-xs" style={{ padding: '12px 16px', color: 'var(--text)' }}>{k.name}</td>
+                <td className="font-mono text-[11px]" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
                   {k.last_used_at ? new Date(k.last_used_at).toLocaleDateString() : 'Never'}
                 </td>
-                <td className="font-mono" style={{ padding: '10px 14px', color: 'var(--text-secondary)', fontSize: 11 }}>{new Date(k.created_at).toLocaleDateString()}</td>
-                <td style={{ padding: '10px 14px' }}>
+                <td className="font-mono text-[11px]" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{new Date(k.created_at).toLocaleDateString()}</td>
+                <td style={{ padding: '12px 16px' }}>
                   <button onClick={() => handleDelete(k.id)} className="opacity-40 hover:opacity-100 transition-opacity" style={{ color: 'var(--red)' }}>
                     <Trash2 size={14} />
                   </button>
@@ -60,7 +62,7 @@ export default function AdminApiKeysPage() {
               </tr>
             ))}
             {keys.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>No API keys</td></tr>
+              <tr><td colSpan={5} className="font-mono text-xs" style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>No API keys generated</td></tr>
             )}
           </tbody>
         </table>
